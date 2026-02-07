@@ -41,6 +41,8 @@
   "author": "alflennik",
   "license": "MIT",
   "devDependencies": {
-    "shiki": "^3.22.0"
+    "shiki": "^3.22.0",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.3.2"
   }
 }
