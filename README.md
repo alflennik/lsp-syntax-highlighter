@@ -1,6 +1,6 @@
 # Converter for TextMate Grammar Scopes to Semantic Tokens For LSPs
 
-Converts a TextMate Grammar scope rule name to the best matching semantic token. The semantic token returned will be the one most likely to produce the same color that the TextMate grammar would, based on the Shiki collection of prominent themes and grammars.
+Converts a TextMate Grammar scope rule name to the best matching semantic token. The semantic token returned will be the one most likely to produce the same color that the TextMate grammar would, based on the [shiki](https://www.npmjs.com/package/shiki) collection of prominent themes and grammars.
 
 ## Installation
 
@@ -18,7 +18,7 @@ const semanticToken = tmConvert('punctuation.definition.string.html')
 console.log(semanticToken) // "string"
 ```
 
-A library like [shiki](https://www.npmjs.com/package/shiki) or [vscode-textmate](https://www.npmjs.com/package/vscode-textmate) is recommended to load the textmate grammar scope in the first place.
+A library like [vscode-textmate](https://www.npmjs.com/package/vscode-textmate) is recommended to load the textmate grammar scope in the first place.
 
 ## Conversion Database
 
