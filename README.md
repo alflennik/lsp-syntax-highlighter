@@ -1,12 +1,6 @@
 # Converter for TextMate Grammar Scopes to Semantic Tokens For LSPs
 
-Converts a TextMate Grammar scope rule name to the best matching semantic token. The semantic token returned will be the one most likely to produce the same color that the TextMate grammar would, based on the [shiki](https://www.npmjs.com/package/shiki) collection of prominent themes and grammars.
-
-## Installation
-
-```
-npm install textmate-grammar-to-semantic-tokens
-```
+Converts a TextMate Grammar scope to a semantic token. The semantic token returned will be the one most likely to produce the same color that the TextMate grammar would, based on real-world results gathered from the [shiki](https://www.npmjs.com/package/shiki) collection of prominent themes and grammars.
 
 ## Usage
 
@@ -19,6 +13,39 @@ console.log(semanticToken) // "string"
 ```
 
 A library like [vscode-textmate](https://www.npmjs.com/package/vscode-textmate) is recommended to load the textmate grammar scope in the first place.
+
+## Installation
+
+```
+npm install textmate-grammar-to-semantic-tokens
+```
+
+In order to use in a VSCode extension, you need add the following to your extension's package.json:
+
+```json
+{
+  // ...
+  "contributes": {
+    "semanticTokenScopes": [
+      {
+        "scopes": {
+          "comment": ["comment"],
+          "string": ["string"],
+          "operator": ["keyword.operator"],
+          "keyword": ["keyword.control"],
+          "customConstant": ["constant"],
+          "customConstantNumeric": ["constant.numeric"],
+          "customIllegal": ["invalid.illegal"],
+          "customEscape": ["constant.character.escape"],
+          "customRegexp": ["string.regexp"],
+          "customTagPunctuation": ["punctuation.definition.tag"],
+          "customAttributeName": ["entity.other.attribute-name"],
+        }
+      }
+    ]
+  }
+}
+```
 
 ## Conversion Database
 
@@ -50,4 +77,4 @@ const htmlString = /* html */`<h1>Hello</h1>`
 
 ## Methodology
 
-To build the conversion database, I took a list of all the rule names in prominent textmate grammars in the shiki library and counted which semantic tokens produced the correct color for each theme. The semantic token with the highest count is the one that ultimately made it to the final conversion database.
+To build the conversion database, I took a list of all the rule names in prominent textmate grammars in the shiki library and counted which semantic tokens produced the correct color for each theme. The semantic token with the highest count was the one that ultimately made it to the final conversion database.

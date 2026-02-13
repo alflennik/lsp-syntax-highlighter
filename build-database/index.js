@@ -51,9 +51,9 @@ const buildDatabase = async () => {
     });
   });
 
-  // const allRuleNames = Object.keys(allRuleNamesKeyed);
+  const allRuleNames = Object.keys(allRuleNamesKeyed);
   // TEMP
-  const allRuleNames = Object.keys(allRuleNamesKeyed).slice(0, 100);
+  // const allRuleNames = Object.keys(allRuleNamesKeyed).slice(0, 10000);
 
   // Allows you to feed in a scope and get a color back on the other side
   const debuggingGrammar = {
@@ -73,20 +73,21 @@ const buildDatabase = async () => {
     })),
   };
 
-  const allThemeNames = Object.keys(bundledThemes);
+  // const allThemeNames = Object.keys(bundledThemes);
+  // const allThemeNames = ["dark-plus", "dracula", "github-dark", "one-dark-pro"];
+  const allThemeNames = ["one-dark-pro"];
 
   const highlighter = await createHighlighter({
     langs: [debuggingGrammar],
     themes: allThemeNames,
   });
 
-  let cacheCount = 0;
-  let renderCount = 0;
   let ruleNameToColorCache = {};
   const ruleNameToColor = ({ ruleName, themeName }) => {
+    if (ruleName === "entity.name.tag") {
+      console.log();
+    }
     if (ruleNameToColorCache[`${ruleName}${themeName}`]) {
-      cacheCount += 1;
-      console.log("render", renderCount, "cache", cacheCount);
       return ruleNameToColorCache[`${ruleName}${themeName}`];
     }
     const output = highlighter.codeToTokens(ruleName, {
@@ -94,14 +95,8 @@ const buildDatabase = async () => {
       theme: themeName,
     });
 
-    if (!output?.tokens?.[0]?.[0]?.color) {
-      console.log();
-    }
-
     const color = `${output.tokens[0][0].color} (${output.tokens[0][0].fontStyle})`;
     ruleNameToColorCache[`${ruleName}${themeName}`] = color;
-    renderCount += 1;
-    console.log("render", renderCount, "cache", renderCount);
     return color;
   };
 
@@ -119,7 +114,7 @@ const buildDatabase = async () => {
     "function.defaultLibrary": "support.function",
     method: "entity.name.function.member",
     macro: "entity.name.function.preprocessor",
-    variable: "variable.other.readwrite , entity.name.variable",
+    variable: "entity.name.variable",
     "variable.readonly": "variable.other.constant",
     "variable.readonly.defaultLibrary": "support.constant",
     parameter: "variable.parameter",
@@ -127,6 +122,19 @@ const buildDatabase = async () => {
     "property.readonly": "variable.other.constant.property",
     enumMember: "variable.other.enummember",
     event: "variable.other.event",
+
+    // Expanded list
+    comment: "comment",
+    string: "string",
+    operator: "keyword.operator",
+    keyword: "keyword.control",
+    customConstant: "constant",
+    customConstantNumeric: "constant.numeric",
+    customIllegal: "invalid.illegal",
+    customEscape: "constant.character.escape",
+    customRegexp: "string.regexp",
+    customTagPunctuation: "punctuation.definition.tag",
+    customAttributeName: "entity.other.attribute-name",
   };
 
   const themeSemanticTokenColors = {};
@@ -145,7 +153,9 @@ const buildDatabase = async () => {
   // entity.name.function
   const minimalRuleNamesKeyed = {};
   allRuleNames.forEach((ruleName, index) => {
-    console.log(ruleName, `${index} of ${allRuleNames.length}`);
+    if (index % 100 === 0) {
+      console.log(`${index} of ${allRuleNames.length}`);
+    }
     const colorByTheme = Object.fromEntries(
       allThemeNames.map((themeName) => {
         return [themeName, ruleNameToColor({ ruleName, themeName })];
@@ -196,9 +206,54 @@ const buildDatabase = async () => {
     }
   });
 
-  allThemeNames.forEach((themeName) => {});
+  const minimalRuleNames = Object.keys(minimalRuleNamesKeyed);
 
-  console.log(semanticTokenToColor);
+  const ruleNameToSemanticToken = {};
+  const failures = [];
+
+  minimalRuleNames.forEach((ruleName) => {
+    const semanticTokenMatchCounts = {};
+
+    allThemeNames.forEach((themeName) => {
+      const semanticTokenColors = themeSemanticTokenColors[themeName];
+      const color = ruleNameToColor({ ruleName, themeName });
+      Object.entries(semanticTokenColors).map(
+        ([semanticToken, semanticTokenColor]) => {
+          if (color === semanticTokenColor) {
+            if (!semanticTokenMatchCounts[semanticToken]) {
+              semanticTokenMatchCounts[semanticToken] = 0;
+            }
+            semanticTokenMatchCounts[semanticToken] += 1;
+          }
+        },
+      );
+    });
+
+    let topResult;
+    for (const [semanticToken, count] of Object.entries(
+      semanticTokenMatchCounts,
+    )) {
+      if (count === allThemeNames.length) {
+        topResult = semanticToken;
+        break;
+      }
+    }
+
+    if (topResult) {
+      ruleNameToSemanticToken[ruleName] = topResult;
+    } else {
+      failures.push(ruleName);
+    }
+  });
+
+  console.log("success count", Object.entries(ruleNameToSemanticToken).length);
+  console.log("failure count", failures.length);
+
+  const database = Object.fromEntries(
+    Object.entries(ruleNameToSemanticToken).sort((a, b) =>
+      a[0].localeCompare(b[0], "en"),
+    ),
+  );
 };
 
 const walkObjects = (value, callback) => {
