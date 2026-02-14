@@ -61,7 +61,7 @@ const step2 = async () => {
   const debuggingGrammar = {
     scopeName: "source.debug-scopes",
     name: "debugging-grammar",
-    patterns: { match: "^(.*)$", name: "$1" },
+    patterns: [{ match: "\\b([a-zA-Z0-9_.]+)\\b", captures: { 1: { name: "$1" } } }],
   }
   const highlighter = await createHighlighter({ langs: [debuggingGrammar], themes: allThemeNames })
 
@@ -77,12 +77,12 @@ const step2 = async () => {
     return JSON.stringify(sortObjectKeys(omit(output.tokens[0][0], ["content", "offset"])))
   }
 
-  const defaultColors = Object.fromEntries(
-    allThemeNames.map(themeName => {
-      const color = scopeNameToColor({ scopeName: "default", themeName })
-      return [themeName, color]
-    }),
-  )
+  // const defaultColors = Object.fromEntries(
+  //   allThemeNames.map(themeName => {
+  //     const color = scopeNameToColor({ scopeName: "default", themeName })
+  //     return [themeName, color]
+  //   }),
+  // )
 
   const db = new sqlite3.Database("./data.db", err => {
     if (err) throw err
@@ -104,7 +104,7 @@ const step2 = async () => {
   const themes = await query(`SELECT id, name FROM themes`)
 
   for (scopeName of allScopeNames) {
-    let differsFromDefault = false
+    // let differsFromDefault = false
     let specificityMatters = false
 
     let simplifiedScopeName
@@ -116,8 +116,8 @@ const step2 = async () => {
 
     const themeColors = themes.map(theme => {
       const color = scopeNameToColor({ scopeName, themeName: theme.name })
-      const defaultColor = defaultColors[theme.name]
-      if (color !== defaultColor) differsFromDefault = true
+      // const defaultColor = defaultColors[theme.name]
+      // if (color !== defaultColor) differsFromDefault = true
 
       let simplifiedScopeNameColor
       if (simplifiedScopeName) {
@@ -131,7 +131,7 @@ const step2 = async () => {
       return [theme.id, color]
     })
 
-    if (!differsFromDefault || !specificityMatters) {
+    if (!specificityMatters) {
       console.log("❌", scopeName)
       continue
     }

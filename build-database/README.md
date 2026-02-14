@@ -1,14 +1,26 @@
 # Rebuilding The Database
 
-Open a terminal in the build-database folder.
-
 Ensure python3 is installed.
 Ensure node is installed.
 
+Open a terminal in the build-database folder.
+
 Run `npm install`.
+
+Install Python dependencies.
+
+Run `python3 -m venv .venv` to set up a virtual environment.
+
+On Mac or Linux, run `source .venv/bin/activate`, and on Windows run `.venv\Scripts\activate` to activate the environment.
+
+Run `pip install -r requirements.txt` to finish the install process.
 
 Run `python3 step-1-seed-database.py`
 
-A `data.db` file should appear.
+A `data.db` file should appear, which contains a sqlite database.
 
 Run `node step-2-populate-colors.js`
+
+This will populate the database with color outputs.
+
+Run `python3 step-3-cluster.py`
