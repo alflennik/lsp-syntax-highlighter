@@ -63,6 +63,10 @@ console.log(conversionDatabase) /* {
 } */
 ```
 
+## Building The Database From Scratch
+
+See the dedicated guide: [./build-database/README.md](./build-database/README.md)
+
 ## Background
 
 Editors like VSCode support two types of syntax highlighting, TextMate Grammars, which are available for every language you've ever heard of, and Semantic Tokens, which can be emitted by language servers under the language server protocol (LSP), which are more powerful but not always widely available.

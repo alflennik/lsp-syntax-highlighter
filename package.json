@@ -41,7 +41,9 @@
   "author": "alflennik",
   "license": "MIT",
   "devDependencies": {
+    "lodash.omit": "^4.5.0",
     "shiki": "^3.22.0",
+    "sqlite3": "^5.1.7",
     "vscode-oniguruma": "^2.0.1",
     "vscode-textmate": "^9.3.2"
   }
