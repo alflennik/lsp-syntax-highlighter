@@ -7,21 +7,22 @@ connection = sqlite3.connect(db_path)
 db = connection.cursor()
 
 db.execute("""
-CREATE TABLE IF NOT EXISTS themes (
+CREATE TABLE themes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL
 )
 """)
 
 db.execute("""
-CREATE TABLE IF NOT EXISTS scopes (
+CREATE TABLE scopes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    cluster_scope_id INTEGER
 )
 """)
 
 db.execute("""
-CREATE TABLE IF NOT EXISTS colors (
+CREATE TABLE colors (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     theme_id INTEGER NOT NULL,
     scope_id INTEGER NOT NULL,
