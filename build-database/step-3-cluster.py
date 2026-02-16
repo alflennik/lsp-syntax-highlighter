@@ -46,7 +46,7 @@ def custom_distance(colors_by_theme_by_scope1, colors_by_theme_by_scope2):
 
 X = np.array(list(colors_by_theme_by_scope.items()))
 
-kmedoids = KMedoids(n_clusters=28, metric=custom_distance)
+kmedoids = KMedoids(n_clusters=30, metric=custom_distance)
 
 kmedoids.fit(X)
 

@@ -66,10 +66,10 @@ You can directly import the translation database:
 const conversionDatabase = require('textmate-grammar-to-semantic-tokens/database.json')
 
 console.log(conversionDatabase) /* {
-  'case-clause.expr': 'keyword'
-  'comment.block.documentation.js': 'keyword'
-  'comment.block.js': 'keyword'
-  'comment.line.double-slash.js': 'keyword'
+  'keyword.struct.go': 'keyword'
+  'comment.block.documentation.cs': 'comment',
+  'comment.block.preprocessor': 'comment',
+  'support.module.elm': 'support',
   // ...
 } */
 ```

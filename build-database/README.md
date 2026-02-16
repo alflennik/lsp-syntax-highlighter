@@ -21,10 +21,10 @@ A `data.db` file should appear, which contains a sqlite database.
 
 Run `node step-2-populate-colors.js`
 
-This will populate the database with color outputs. On my machine this takes around 20 seconds. ❌ is shown for scopes that have no affect on any of the themes (and can be ignored.)
+This will populate the database with color outputs. On my machine this takes around 30 seconds. ❌ is shown for scopes that have no affect on any of the themes (and can be ignored.)
 
 Run `python3 step-3-cluster.py`
 
-This clusters the data into 25 clusters using the kmedoids fasterPAM algorithm, populating the cluster_scope_id for each scope.
+This clusters the data into 30 clusters using the kmedoids fasterPAM algorithm, populating the cluster_scope_id for each scope.
 
 Run `node step-4-optimize.js`

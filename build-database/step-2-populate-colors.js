@@ -55,11 +55,8 @@ const step2 = async () => {
   })
 
   const allScopeNames = Object.keys(allScopeNamesKeyed)
-  // const allScopeNames = Object.keys(allScopeNamesKeyed).slice(0, 10000);
 
   const allThemeNames = Object.keys(bundledThemes)
-  // const allThemeNames = ["dark-plus", "dracula", "github-dark", "one-dark-pro"];
-  // const allThemeNames = ["one-dark-pro"];
 
   // Allows you to feed in a scope and get a color back on the other side
   const debuggingGrammar = {
@@ -70,9 +67,6 @@ const step2 = async () => {
   const highlighter = await createHighlighter({ langs: [debuggingGrammar], themes: allThemeNames })
 
   const scopeNameToColor = ({ scopeName, themeName }) => {
-    if (themeName === "one-dark-pro" && scopeName === "constant") {
-      console.log()
-    }
     const output = highlighter.codeToTokens(scopeName, {
       lang: "debugging-grammar",
       theme: themeName,
@@ -80,13 +74,6 @@ const step2 = async () => {
 
     return JSON.stringify(sortObjectKeys(omit(output.tokens[0][0], ["content", "offset"])))
   }
-
-  // const defaultColors = Object.fromEntries(
-  //   allThemeNames.map(themeName => {
-  //     const color = scopeNameToColor({ scopeName: "default", themeName })
-  //     return [themeName, color]
-  //   }),
-  // )
 
   const db = new sqlite3.Database("./data.db", err => {
     if (err) throw err
@@ -108,7 +95,6 @@ const step2 = async () => {
   const themes = await query(`SELECT id, name FROM themes`)
 
   for (scopeName of allScopeNames) {
-    // let differsFromDefault = false
     let specificityMatters = false
 
     let simplifiedScopeName
@@ -120,8 +106,6 @@ const step2 = async () => {
 
     const themeColors = themes.map(theme => {
       const color = scopeNameToColor({ scopeName, themeName: theme.name })
-      // const defaultColor = defaultColors[theme.name]
-      // if (color !== defaultColor) differsFromDefault = true
 
       let simplifiedScopeNameColor
       if (simplifiedScopeName) {
