@@ -22,6 +22,10 @@ const step2 = async () => {
         const isValidName = typeof object.name === "string"
         if (!isValidName) return
 
+        // These mandate specific formatting (e.g. markup.underline, markup.italic) and clash with
+        // the whole concept of semantic tokens
+        if (object.name.includes("markup")) return
+
         // Handle spaces, which can be used to apply multiple names to one token
         const names = object.name.split(" ")
 

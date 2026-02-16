@@ -1,4 +1,6 @@
 const sqlite3 = require("sqlite3").verbose()
+const path = require("path")
+const fs = require("fs/promises")
 
 const step4 = async () => {
   const scopes = await query(`
@@ -6,8 +8,50 @@ const step4 = async () => {
     FROM scopes s1
       INNER JOIN scopes s2 ON s1.cluster_scope_id = s2.id
   `)
-  console.log(scopes)
-  console.log()
+
+  let newWellKnownScopes = []
+  let database = {}
+  scopes.forEach(scope => {
+    database[scope.name] = scope.cluster_scope_name
+
+    if (
+      !Object.values(wellKnownMappings).includes(scope.cluster_scope_name) &&
+      !newWellKnownScopes.find(each => each.id === scope.cluster_scope_id)
+    ) {
+      newWellKnownScopes.push({ id: scope.cluster_scope_id, name: scope.cluster_scope_name })
+    }
+  })
+
+  console.log(newWellKnownScopes.map(each => each.name).join("\n"))
+
+  await fs.writeFile(
+    path.resolve(__dirname, "../database.json"),
+    JSON.stringify(database, null, 2),
+    { encoding: "utf8" },
+  )
+}
+
+const wellKnownMappings = {
+  namespace: "entity.name.namespace",
+  type: "entity.name.type",
+  "type.defaultLibrary": "support.type",
+  struct: "storage.type.struct",
+  class: "entity.name.type.class",
+  "class.defaultLibrary": "support.class",
+  interface: "entity.name.type.interface",
+  enum: "entity.name.type.enum",
+  function: "entity.name.function",
+  "function.defaultLibrary": "support.function",
+  method: "entity.name.function.member",
+  macro: "entity.name.function.preprocessor",
+  variable: "entity.name.variable",
+  "variable.readonly": "variable.other.constant",
+  "variable.readonly.defaultLibrary": "support.constant",
+  parameter: "variable.parameter",
+  property: "variable.other.property",
+  "property.readonly": "variable.other.constant.property",
+  enumMember: "variable.other.enummember",
+  event: "variable.other.event",
 }
 
 const db = new sqlite3.Database("./data.db", err => {

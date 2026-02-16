@@ -5,14 +5,14 @@ Converts a TextMate Grammar scope to a semantic token. The semantic token return
 ## Usage
 
 ```js
-const tmConvert = require('textmate-grammar-to-semantic-tokens')
+const convertScopeToSemanticToken = require('textmate-grammar-to-semantic-tokens')
 
-const semanticToken = tmConvert('punctuation.definition.string.html')
+const semanticToken = convertScopeToSemanticToken('punctuation.definition.string.html')
 
-console.log(semanticToken) // "string"
+console.log(semanticToken) // "string.declaration"
 ```
 
-A library like [vscode-textmate](https://www.npmjs.com/package/vscode-textmate) is recommended to load the textmate grammar scope in the first place.
+A library like [vscode-textmate](https://www.npmjs.com/package/vscode-textmate) is recommended to load the textmate grammar scopes in the first place.
 
 ## Installation
 
@@ -30,16 +30,27 @@ In order to use in a VSCode extension, you need add the following to your extens
       {
         "scopes": {
           "comment": ["comment"],
+          "punctuation": ["punctuation"],
+          "variable.general": ["variable"],
+          "keyword.readonly": ["constant.language"],
+          "variable.general.readonly": ["constant"],
+          "keyword.definition": ["storage.type"],
+          "keyword": ["keyword"],
           "string": ["string"],
+          "punctuation.readonly": ["constant.character"],
+          "variable.variant": ["entity.name"],
+          "other": ["default"],
+          "other.defaultLibrary": ["support"],
+          "keyword.variant": ["keyword.control"],
+          "variable.defaultLibrary": ["variable.language"],
           "operator": ["keyword.operator"],
-          "keyword": ["keyword.control"],
-          "customConstant": ["constant"],
-          "customConstantNumeric": ["constant.numeric"],
-          "customIllegal": ["invalid.illegal"],
-          "customEscape": ["constant.character.escape"],
-          "customRegexp": ["string.regexp"],
-          "customTagPunctuation": ["punctuation.definition.tag"],
-          "customAttributeName": ["entity.other.attribute-name"],
+          "keyword.general": ["keyword.other"],
+          "operator.variant": ["keyword.operator.expression"],
+          "string.declaration": ["punctuation.definition.string"],
+          "label.definition": ["punctuation.definition.tag"],
+          "label": ["entity.name.tag"],
+          "invalid": ["invalid"],
+          "punctuation.embeddedLanguage": ["punctuation.section.embedded"],
         }
       }
     ]

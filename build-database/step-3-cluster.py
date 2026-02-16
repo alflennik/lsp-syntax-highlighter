@@ -46,7 +46,7 @@ def custom_distance(colors_by_theme_by_scope1, colors_by_theme_by_scope2):
 
 X = np.array(list(colors_by_theme_by_scope.items()))
 
-kmedoids = KMedoids(n_clusters=20, metric=custom_distance)
+kmedoids = KMedoids(n_clusters=28, metric=custom_distance)
 
 kmedoids.fit(X)
 
@@ -58,26 +58,30 @@ for point_position, cluster_label in enumerate(kmedoids.labels_):
 clusters = list(cluster_dict.values())
 
 well_known_mappings = {
-  "namespace": "entity.name.namespace",
-  "type": "entity.name.type",
-  "type.defaultLibrary": "support.type",
-  "struct": "storage.type.struct",
-  "class": "entity.name.type.class",
-  "class.defaultLibrary": "support.class",
-  "interface": "entity.name.type.interface",
-  "enum": "entity.name.type.enum",
-  "function": "entity.name.function",
-  "function.defaultLibrary": "support.function",
-  "method": "entity.name.function.member",
-  "macro": "entity.name.function.preprocessor",
-  "variable": "variable.other.readwrite , entity.name.variable",
-  "variable.readonly": "variable.other.constant",
-  "variable.readonly.defaultLibrary": "support.constant",
-  "parameter": "variable.parameter",
-  "property": "variable.other.property",
-  "property.readonly": "variable.other.constant.property",
-  "enumMember": "variable.other.enummember",
-  "event": "variable.other.event"
+    # Mandated by me
+    "default": "default",
+    
+    # Built into VSCode
+    "namespace": "entity.name.namespace",
+    "type": "entity.name.type",
+    "type.defaultLibrary": "support.type",
+    "struct": "storage.type.struct",
+    "class": "entity.name.type.class",
+    "class.defaultLibrary": "support.class",
+    "interface": "entity.name.type.interface",
+    "enum": "entity.name.type.enum",
+    "function": "entity.name.function",
+    "function.defaultLibrary": "support.function",
+    "method": "entity.name.function.member",
+    "macro": "entity.name.function.preprocessor",
+    "variable": "variable.other.readwrite , entity.name.variable",
+    "variable.readonly": "variable.other.constant",
+    "variable.readonly.defaultLibrary": "support.constant",
+    "parameter": "variable.parameter",
+    "property": "variable.other.property",
+    "property.readonly": "variable.other.constant.property",
+    "enumMember": "variable.other.enummember",
+    "event": "variable.other.event"
 }
 
 for cluster in clusters:
