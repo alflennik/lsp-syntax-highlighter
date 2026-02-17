@@ -17,7 +17,7 @@ const convertScopeToSemanticToken = scope => {
     if (result) return semanticTokensFlipped[result]
   }
 
-  return "other"
+  return semanticTokensFlipped[database.default]
 }
 
 const semanticTokensFlipped = Object.fromEntries(

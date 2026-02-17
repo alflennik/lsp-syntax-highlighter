@@ -28,3 +28,5 @@ Run `python3 step-3-cluster.py`
 This clusters the data into 30 clusters using the kmedoids fasterPAM algorithm, populating the cluster_scope_id for each scope.
 
 Run `node step-4-optimize.js`
+
+If you need to clear the sqlite database, useful if updating the scripts, you can do so with `python3 utility-clear-database.py`

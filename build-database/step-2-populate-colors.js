@@ -1,8 +1,9 @@
-const omit = require("lodash.omit")
+const { createScopeNameToColor, walkObjects } = require("./utilities")
 const sqlite3 = require("sqlite3").verbose()
 
 const step2 = async () => {
-  const { createHighlighter, bundledLanguages, bundledThemes } = await import("shiki")
+  const { bundledLanguages, bundledThemes } = await import("shiki")
+  const scopeNameToColor = await createScopeNameToColor()
 
   const allGrammars = await Object.fromEntries(
     await Promise.all(
@@ -57,23 +58,6 @@ const step2 = async () => {
   const allScopeNames = Object.keys(allScopeNamesKeyed)
 
   const allThemeNames = Object.keys(bundledThemes)
-
-  // Allows you to feed in a scope and get a color back on the other side
-  const debuggingGrammar = {
-    scopeName: "source.debug-scopes",
-    name: "debugging-grammar",
-    patterns: [{ match: "\\b([a-zA-Z0-9_.]+)\\b", captures: { 1: { name: "$1" } } }],
-  }
-  const highlighter = await createHighlighter({ langs: [debuggingGrammar], themes: allThemeNames })
-
-  const scopeNameToColor = ({ scopeName, themeName }) => {
-    const output = highlighter.codeToTokens(scopeName, {
-      lang: "debugging-grammar",
-      theme: themeName,
-    })
-
-    return JSON.stringify(sortObjectKeys(omit(output.tokens[0][0], ["content", "offset"])))
-  }
 
   const db = new sqlite3.Database("./data.db", err => {
     if (err) throw err
@@ -144,22 +128,5 @@ const step2 = async () => {
     })
   })
 }
-
-const walkObjects = (value, callback) => {
-  if (value === null || typeof value !== "object") return
-
-  if (Array.isArray(value)) {
-    value.forEach(item => walkObjects(item, callback))
-    return
-  }
-
-  callback(value)
-  Object.values(value).forEach(v => walkObjects(v, callback))
-}
-
-const sortObjectKeys = obj =>
-  Object.keys(obj)
-    .sort()
-    .reduce((acc, key) => ({ ...acc, [key]: obj[key] }), {})
 
 step2()

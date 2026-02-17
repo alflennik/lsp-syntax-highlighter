@@ -24,9 +24,21 @@ const step4 = async () => {
 
   console.log(newWellKnownScopes.map(each => each.name).join("\n"))
 
+  const newWellKnownMappings = Object.fromEntries(
+    newWellKnownScopes.map((scope, index) => {
+      return [`untitled${index + 1}`, scope.name]
+    }),
+  )
+
   await fs.writeFile(
     path.resolve(__dirname, "../database.json"),
     JSON.stringify(database, null, 2),
+    { encoding: "utf8" },
+  )
+
+  await fs.writeFile(
+    path.resolve(__dirname, "../semanticTokens.json"),
+    JSON.stringify({ ...wellKnownMappings, ...newWellKnownMappings }, null, 2),
     { encoding: "utf8" },
   )
 }
