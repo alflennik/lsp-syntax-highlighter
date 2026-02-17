@@ -27,14 +27,6 @@ const generateDemo = async () => {
     ),
   )
 
-  // Just simulate using semantic tokens instead of actually using them
-  const convertScopeToScope = scope => {
-    if (!semanticTokens[convertScopeToSemanticToken(scope)]) {
-      console.log()
-    }
-    return semanticTokens[convertScopeToSemanticToken(scope)]
-  }
-
   const semanticThemes = Object.fromEntries(
     Object.values(allThemes).map(theme => {
       const semanticTokensToColors = Object.fromEntries(
@@ -56,8 +48,6 @@ const generateDemo = async () => {
           }
         }
       })
-
-      // console.log(typeof person) // object
 
       const tokenColors = []
       allScopes.forEach(scopeName => {
@@ -85,9 +75,50 @@ const generateDemo = async () => {
     }),
   )
 
+  const rawResponse = await fetch(
+    "https://raw.githubusercontent.com/shikijs/textmate-grammars-themes/refs/heads/main/sources-grammars.ts",
+  )
+  const response = await rawResponse.text()
+  const namesAndAliasesMatches = response.match(/(name: '([^']+)'|aliases: \[[^\]]*\])/g)
+
+  const names = []
+  const aliasToName = {}
+  let latestName
+  namesAndAliasesMatches.forEach(matched => {
+    if (matched.startsWith("name:")) {
+      latestName = matched.match(/name: '(.*)'/)[1]
+      aliasToName[latestName] = latestName
+      names.push(latestName)
+    } else if (matched.startsWith("aliases")) {
+      const aliases = matched.match(/'([^']+)'/g)
+      aliases.forEach(alias => {
+        aliasToName[alias.slice(1, -1)] = latestName
+      })
+    }
+  })
+
+  const samples = {}
+
+  await Promise.all(
+    names.map(async name => {
+      const response = await fetch(
+        `https://raw.githubusercontent.com/shikijs/textmate-grammars-themes/refs/heads/main/samples/${name}.sample`,
+      )
+      if (response.ok) {
+        samples[name] = await response.text()
+      }
+    }),
+  )
+
   await fs.writeFile(
     path.resolve(__dirname, "./semanticThemes.json"),
     JSON.stringify(semanticThemes, null, 2),
+    { encoding: "utf8" },
+  )
+
+  await fs.writeFile(
+    path.resolve(__dirname, "./samples.json"),
+    JSON.stringify([aliasToName, samples], null, 2),
     { encoding: "utf8" },
   )
 }

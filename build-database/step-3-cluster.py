@@ -47,8 +47,7 @@ def custom_distance(colors_by_theme_by_scope1, colors_by_theme_by_scope2):
 X = np.array(list(colors_by_theme_by_scope.items()))
 
 kmedoids = KMedoids(
-    n_clusters=30,
-    # n_clusters=1200,
+    n_clusters=300,
     metric=custom_distance,
     random_state=99
 )

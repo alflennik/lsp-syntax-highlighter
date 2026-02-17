@@ -33,12 +33,42 @@
         margin-left: 4px;
       }
     }
+    .label-container {
+      padding: 14px 30px 0 14px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+
+      select {
+        margin-right: 30px;
+      }
+    }
+    .label-note {
+      width: 100%;
+      text-align: right;
+      color: #e4e4c0;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: end;
+
+      svg {
+        width: 25px;
+        height: 25px;
+        fill: #dfdf98;
+        margin-right: 8px;
+      }
+    }
     .highlighting-container {
       position: relative;
       
       > * {
         position: absolute;
         inset: 0;
+      }
+
+      pre {
+        padding: 30px;
       }
     }
     .highlighting-label {
@@ -48,7 +78,7 @@
       border-radius: 1.5em;
       padding: 10px 20px;
       position: fixed;
-      top: 40px;
+      top: 80px;
       right: 40px;
       display: inline-block;
     }
@@ -60,9 +90,14 @@
     
     const load = async () => {
       let semanticThemes
+      let languageAliasToName
+      let samples
       try {
-        const response = await fetch('semanticThemes.json')
-        semanticThemes = await response.json()
+        const semanticThemesResponse = await fetch('semanticThemes.json')
+        semanticThemes = await semanticThemesResponse.json()
+
+        const samplesResponse = await fetch('samples.json')
+        ;[languageAliasToName, samples] = await samplesResponse.json()
       } catch (error) {
         document.body.insertAdjacentHTML(
           'afterbegin', 
@@ -77,13 +112,42 @@
         return
       }
 
+      const defaultThemeName = 'one-dark-pro'
+      const defaultLanguageName = 'html'
+
       document.body.insertAdjacentHTML(
         'afterbegin', 
         `
-          <label for="theme">Theme</label>
-          <select id="theme">
-            ${Object.keys(bundledThemes).map(themeName => `<option>${themeName}</option>`)}
-          </select>
+          <div class="label-container">
+            <label for="theme">Theme</label>
+            <select id="theme">
+              ${Object.keys(bundledThemes).map(
+                themeName => 
+                  `<option 
+                    ${themeName === defaultThemeName ? 'selected="true"' : ''}
+                    value="${themeName}"
+                  >
+                    ${themeName}
+                  </option>`
+              )}
+            </select>
+            <label for="language">Language</label>
+            <select id="language">
+              ${Object.keys(bundledLanguages).map(
+                languageName => 
+                  `<option 
+                    ${languageName === defaultLanguageName ? 'selected="true"' : ''}
+                    value="${languageName}"
+                  >
+                    ${languageName}
+                  </option>`  
+              )}
+            </select>
+            <div class="label-note">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M320 576C461.4 576 576 461.4 576 320C576 178.6 461.4 64 320 64C178.6 64 64 178.6 64 320C64 461.4 178.6 576 320 576zM288 224C288 206.3 302.3 192 320 192C337.7 192 352 206.3 352 224C352 241.7 337.7 256 320 256C302.3 256 288 241.7 288 224zM280 288L328 288C341.3 288 352 298.7 352 312L352 400L360 400C373.3 400 384 410.7 384 424C384 437.3 373.3 448 360 448L280 448C266.7 448 256 437.3 256 424C256 410.7 266.7 400 280 400L304 400L304 336L280 336C266.7 336 256 325.3 256 312C256 298.7 266.7 288 280 288z"/></svg>
+              Hold Shift to Preview
+            </div>
+          </div>
           <div class="highlighting-container">
             <div class="highlighting-textmate-container">
               <div class="highlighting-label">Textmate</div>
@@ -99,201 +163,111 @@
 
       const highlighter = await createHighlighter({ 
         themes: [...Object.keys(bundledThemes), ...Object.values(semanticThemes)],
-        langs: ['javascript'] 
+        langs: Object.keys(bundledLanguages) 
       })
 
-      const refreshHighlighting = async ({ themeName }) => {
+      let themeName = defaultThemeName
+      let languageName = defaultLanguageName
+
+      const refreshHighlighting = async () => {
+        let sample = samples[languageAliasToName[languageName]]
+
         const highlightingTextmate = document.querySelector('.highlighting-textmate')
-        highlightingTextmate.innerHTML = highlighter.codeToHtml(samples.js, {
-          lang: 'js',
+        highlightingTextmate.innerHTML = highlighter.codeToHtml(sample, {
+          lang: languageName,
           theme: themeName
         })
         const highlightingSemantic = document.querySelector('.highlighting-semantic')
-        highlightingSemantic.innerHTML = highlighter.codeToHtml(samples.js, {
-          lang: 'js',
+        highlightingSemantic.innerHTML = highlighter.codeToHtml(sample, {
+          lang: languageName,
           theme: `semantic-${themeName}`
         })
       }
 
-      refreshHighlighting({ themeName: Object.keys(bundledThemes)[0] })
+      refreshHighlighting()
 
-      let themeName
       document.querySelector('#theme').addEventListener('change', event => {
         themeName = event.target.value
-        refreshHighlighting({ themeName })
+        refreshHighlighting()
       })
 
+      document.querySelector('#language').addEventListener('change', event => {
+        languageName = event.target.value
+        refreshHighlighting()
+      })
+
+      const refreshDropdowns = () => {
+        document.querySelector(`#theme [value="${themeName}"]`).selected = true
+        document.querySelector(`#language [value="${languageName}"]`).selected = true
+      }
+
       document.addEventListener('keydown', event => {
-        if (event.key !== "Shift") return
-        
-        document.querySelector('.highlighting-textmate-container').style.display = 'none'
-        document.querySelector('.highlighting-semantic-container').style.display = 'block'
+        if (event.key === "Shift") {
+          document.querySelector('.highlighting-textmate-container').style.opacity = 0
+          document.querySelector('.highlighting-semantic-container').style.opacity = 1
+        }
+        if (event.shiftKey && event.key === "ArrowRight") {
+          event.preventDefault()
+          const languageNameIndex = Object.keys(bundledLanguages).findIndex(
+            each => each === languageName
+          )
+          if (Object.keys(bundledLanguages)[languageNameIndex + 1]) {
+            languageName = Object.keys(bundledLanguages)[languageNameIndex + 1]
+          } else {
+            languageName = Object.keys(bundledLanguages)[0]
+          }
+          refreshDropdowns()
+          refreshHighlighting()
+        }
+        if (event.shiftKey && event.key === "ArrowLeft") {
+          event.preventDefault()
+          const languageNameIndex = Object.keys(bundledLanguages).findIndex(
+            each => each === languageName
+          )
+          if (Object.keys(bundledLanguages)[languageNameIndex - 1]) {
+            languageName = Object.keys(bundledLanguages)[languageNameIndex - 1]
+          } else {
+            languageName = Object.keys(bundledLanguages).at(-1)
+          }
+          refreshDropdowns()
+          refreshHighlighting()
+        }
+        if (event.shiftKey && event.key === "ArrowDown") {
+          event.preventDefault()
+          const themeNameIndex = Object.keys(bundledThemes).findIndex(
+            each => each === themeName
+          )
+          if (Object.keys(bundledThemes)[themeNameIndex + 1]) {
+            themeName = Object.keys(bundledThemes)[themeNameIndex + 1]
+          } else {
+            themeName = Object.keys(bundledThemes)[0]
+          }
+          refreshDropdowns()
+          refreshHighlighting()
+        }
+        if (event.shiftKey && event.key === "ArrowUp") {
+          event.preventDefault()
+          const themeNameIndex = Object.keys(bundledThemes).findIndex(
+            each => each === themeName
+          )
+          if (Object.keys(bundledThemes)[themeNameIndex - 1]) {
+            themeName = Object.keys(bundledThemes)[themeNameIndex - 1]
+          } else {
+            themeName = Object.keys(bundledThemes).at(-1)
+          }
+          refreshDropdowns()
+          refreshHighlighting()
+        }
       })
 
       document.addEventListener('keyup', event => {
-        if (event.key !== "Shift") return
-
-        document.querySelector('.highlighting-textmate-container').style.display = 'block'
-        document.querySelector('.highlighting-semantic-container').style.display = 'none'
+        if (event.key === "Shift") {
+          document.querySelector('.highlighting-textmate-container').style.opacity = 1
+          document.querySelector('.highlighting-semantic-container').style.opacity = 0
+        }
       })
 
-      document.querySelector('.highlighting-semantic-container').style.display = 'none'
-    }
-
-    const samples = {
-      js: `
-        // --- Demonstration of imports ---
-
-        // Importing named exports and the default export
-        import defaultAnimal, { person, add } from './module.js';
-
-        // Importing everything from the module as an alias
-        import * as Module from './module.js';
-
-
-        // --- Demonstration of exports ---
-
-        // Named exports
-        export const person = { name: "Alice", age: 30 };
-
-        export function add(x, y = 0) {
-          return x + y;
-        }
-
-        // Default export
-        const defaultAnimal = { name: "Default Animal" };
-        export default defaultAnimal;
-
-        // Generator function
-        export function* idGenerator() {
-          let id = 0;
-          while (true) {
-            yield id++;
-          }
-        }
-
-        // Using typeof for runtime type checks
-        console.log(typeof person);  // object
-        console.log(add(2, 3));      // 5
-        console.log(defaultAnimal);  // { name: "Default Animal" }
-
-        // Emulating 'satisfies' behavior using runtime checks
-        function createAnimal(animal) {
-          if (typeof animal.name === 'string') {
-            return animal;  // Ensures the animal has a 'name' property
-          }
-          throw new Error("Animal must have a name");
-        }
-
-        const dog = createAnimal({ name: "Buddy", breed: "Golden Retriever" });
-        console.log(dog);  // { name: 'Buddy', breed: 'Golden Retriever' }
-
-        // Generator usage
-        const generator = Module.idGenerator();
-        console.log(generator.next().value);  // 0
-        console.log(generator.next().value);  // 1
-        console.log(generator.next().value);  // 2
-
-        // Handling a generic-like behavior by allowing any type and runtime checks
-        function identity(arg) {
-          return arg;
-        }
-
-        let str = identity("Hello");
-        let num = identity(42);
-        console.log(str, num);  // "Hello", 42
-
-        // Emulating default generics by using default parameters
-        function wrapInArray(value = "") {
-          return [value];
-        }
-
-        const stringArray = wrapInArray();  // Default is empty string
-        const numberArray = wrapInArray(42);  // Passes 42 explicitly
-        console.log(stringArray, numberArray);  // [""] , [42]
-
-        // --- for-of and for-in loops ---
-
-        // for-of: Iterates over iterable objects like arrays, strings, maps, etc.
-        const fruits = ["apple", "banana", "cherry"];
-        for (const fruit of fruits) {
-          console.log(fruit);  // Outputs: apple, banana, cherry
-        }
-
-        // for-in: Iterates over enumerable properties of an object
-        const car = { make: "Tesla", model: "Model S", year: 2021 };
-        for (const key in car) {
-          if (car.hasOwnProperty(key)) {
-            console.log(\`\${key}: \${car[key]}\`);  // Outputs key-value pairs of car object
-          }
-        }
-
-        // --- IIFE (Immediately Invoked Function Expression) ---
-
-        (function () {
-          console.log("This IIFE runs immediately after it's defined.");
-          const privateVar = "I'm private inside the IIFE!";
-          console.log(privateVar);  // Accessing the private variable inside the IIFE
-        })();
-
-        // --- Using a generator to loop indefinitely ---
-        function* infiniteGenerator() {
-          let i = 0;
-          while (true) {
-            yield i++;
-          }
-        }
-
-        const gen = infiniteGenerator();
-        console.log(gen.next().value);  // 0
-        console.log(gen.next().value);  // 1
-
-        // --- Async and Await ---
-
-        async function fetchData(url) {
-          try {
-            const response = await fetch(url);
-            if (!response.ok) {
-              throw new Error('Network response was not ok');
-            }
-            const data = await response.json();
-            return data;
-          } catch (error) {
-            console.error('There has been a problem with your fetch operation:', error);
-          }
-        }
-
-        // Example usage of async function
-        fetchData('https://jsonplaceholder.typicode.com/todos/1')
-          .then(data => console.log(data))  // Outputs fetched data
-          .catch(error => console.error(error));
-
-        // JSDoc type annotations
-        /**
-         * @typedef {Object} Task
-         * @property {string} title
-         * @property {boolean} completed
-         */
-
-        /**
-         * Create a task
-         * @param {Task} task
-         * @returns {Task}
-         */
-        function createTask(task) {
-          return task;
-        }
-
-        const myTask = createTask({
-          title: "Learn JavaScript",
-          completed: false,
-        });
-        console.log(myTask);
-
-        // Importing everything as a namespace (simulated for demonstration)
-        console.log(Module.person);  // { name: "Alice", age: 30 }
-        console.log(Module.add(10, 20));  // 30
-      `
+      document.querySelector('.highlighting-semantic-container').style.opacity = 0
     }
 
     load()
