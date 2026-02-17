@@ -3,6 +3,16 @@ import os
 from collections import defaultdict, namedtuple
 import numpy as np
 from kmedoids import KMedoids
+import re
+
+cluster_count = 300
+
+language_multipliers = {
+    # "js": 100,
+    # "html": 100,
+    # "css": 100,
+    "json": 1000,
+}
 
 db_path = os.path.join(os.getcwd(), "data.db")
 
@@ -27,27 +37,41 @@ colors_by_theme_by_scope = defaultdict(dict)
 for scope_name, theme_name, color in colors:
     colors_by_theme_by_scope[scope_name][theme_name] = color
 
+def get_scope_weight(scope_name):
+    scope_weight = 1
+    for language_name, multiplier in language_multipliers.items():
+        if re.search(rf"\b{re.escape(language_name)}\b", scope_name):
+            scope_weight *= multiplier
+    return scope_weight
+
 def custom_distance(colors_by_theme_by_scope1, colors_by_theme_by_scope2):
-    colors_by_theme1 = colors_by_theme_by_scope1[1]
-    colors_by_theme2 = colors_by_theme_by_scope2[1]
-    same_count = 0
-    count = 0
+    scope_name1, colors_by_theme1 = colors_by_theme_by_scope1
+    scope_name2, colors_by_theme2 = colors_by_theme_by_scope2
+
+    same_weight_total = 0.0
+    comparison_weight_total = 0.0
+
+    scope_weight = max(get_scope_weight(scope_name1), get_scope_weight(scope_name2))
+
     for theme_name, color1 in colors_by_theme1.items():
-        count += 1
+        comparison_weight_total += scope_weight
+
         if theme_name not in colors_by_theme2:
             continue
-        color2 = colors_by_theme2[theme_name]
-        if color1 == color2:
-            same_count += 1
 
-    ratio = same_count / count
+        color2 = colors_by_theme2[theme_name]
+
+        if color1 == color2:
+            same_weight_total += scope_weight
+
+    ratio = same_weight_total / comparison_weight_total
     distance = 1 - ratio
     return distance
 
 X = np.array(list(colors_by_theme_by_scope.items()))
 
 kmedoids = KMedoids(
-    n_clusters=2500,
+    n_clusters=cluster_count,
     metric=custom_distance,
     random_state=99
 )
@@ -89,30 +113,31 @@ well_known_mappings = {
 }
 
 for cluster in clusters:
-    custom_center_point = None
+    custom_center_point = cluster[0]
+    # custom_center_point = None
 
-    for point in cluster:
-        if point[0] in well_known_mappings.values():
-            custom_center_point = point
-            break
+    # for point in cluster:
+    #     if point[0] in well_known_mappings.values():
+    #         custom_center_point = point
+    #         break
     
-    if custom_center_point is None:
-        by_depth = defaultdict(list)
+    # if custom_center_point is None:
+    #     by_depth = defaultdict(list)
 
-        for index, point in enumerate(cluster):
-            scope = point[0]
-            depth = scope.count(".")
-            prefix = scope + "."
-            matches = sum(
-                other_point[0].startswith(prefix)
-                for other_point in cluster
-            )
+    #     for index, point in enumerate(cluster):
+    #         scope = point[0]
+    #         depth = scope.count(".")
+    #         prefix = scope + "."
+    #         matches = sum(
+    #             other_point[0].startswith(prefix)
+    #             for other_point in cluster
+    #         )
 
-            # Use -index so order of appearance will win a tie when using max()
-            by_depth[depth].append((matches, -index, point))
+    #         # Use -index so order of appearance will win a tie when using max()
+    #         by_depth[depth].append((matches, -index, point))
 
-        smallest_depth = min(by_depth)
-        custom_center_point = max(by_depth[smallest_depth])[2]
+    #     smallest_depth = min(by_depth)
+    #     custom_center_point = max(by_depth[smallest_depth])[2]
 
     print(custom_center_point[0])
     for point in cluster:

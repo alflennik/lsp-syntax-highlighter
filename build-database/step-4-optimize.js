@@ -22,6 +22,12 @@ const step4 = async () => {
     }
   })
 
+  database = Object.fromEntries(
+    Object.entries(database).sort((a, b) => {
+      return a[0].localeCompare(b[0])
+    }),
+  )
+
   console.log(newWellKnownScopes.map(each => each.name).join("\n"))
 
   const newWellKnownMappings = Object.fromEntries(
