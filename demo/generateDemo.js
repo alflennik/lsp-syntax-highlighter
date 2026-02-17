@@ -5,24 +5,35 @@ const fs = require("fs/promises")
 const path = require("path")
 
 const generateDemo = async () => {
-  const { bundledLanguages, bundledThemes } = await import("shiki")
+  const { /* bundledLanguages, */ bundledThemes } = await import("shiki")
   const scopeNameToColor = await createScopeNameToColor()
 
-  const allGrammars = await Object.fromEntries(
-    await Promise.all(
-      Object.entries(bundledLanguages).map(async ([name, importer]) => {
-        const imported = await importer()
-        const grammar = imported.default.at(-1) // Dependent languages will be listed first
-        return [grammar.scopeName, grammar]
-      }),
-    ),
-  )
+  // const allGrammars = await Object.fromEntries(
+  //   await Promise.all(
+  //     Object.entries(bundledLanguages).map(async ([name, importer]) => {
+  //       const imported = await importer()
+  //       const grammar = imported.default.at(-1) // Dependent languages will be listed first
+  //       return [grammar.scopeName, grammar]
+  //     }),
+  //   ),
+  // )
 
   const allThemes = await Object.fromEntries(
     await Promise.all(
       Object.entries(bundledThemes).map(async ([name, importer]) => {
         const themeModule = await importer()
-        return [name, themeModule.default]
+        const theme = themeModule.default
+        const themeFixed = {
+          ...theme,
+          tokenColors: theme.tokenColors.filter(tokenColorSet => {
+            // One feature Textmate Grammars support is "falling through" - basically it's possible to
+            // decouple the font style, background color and text color across different selectors.
+            // I haven't figured out a way to replicate this, so I decided to discard settings that omit
+            // a text color, basically it's better to get the color right than the font style
+            return !!tokenColorSet?.settings?.foreground
+          }),
+        }
+        return [name, themeFixed]
       }),
     ),
   )
@@ -52,6 +63,9 @@ const generateDemo = async () => {
       const tokenColors = []
       allScopes.forEach(scopeName => {
         const semanticToken = convertScopeToSemanticToken(scopeName)
+        if (!semanticTokensToColors[semanticToken]) {
+          debugger
+        }
         const shikiSettings = JSON.parse(semanticTokensToColors[semanticToken])
 
         const settings = {

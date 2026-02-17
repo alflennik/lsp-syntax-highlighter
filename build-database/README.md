@@ -17,16 +17,14 @@ Run `pip install -r requirements.txt` to finish the install process.
 
 Run `python3 step-1-seed-database.py`
 
-A `data.db` file should appear, which contains a sqlite database.
+If you see `ModuleNotFoundError: No module named 'numpy'`, you need to activate the environment (see above). A `data.db` file should appear, which contains a sqlite database.
 
 Run `node step-2-populate-colors.js`
 
-This will populate the database with color outputs. On my machine this takes around 30 seconds. ❌ is shown for scopes that have no affect on any of the themes (and can be ignored.)
+This will populate the database with color outputs.
 
 Run `python3 step-3-cluster.py`
 
-This clusters the data into 30 clusters using the kmedoids fasterPAM algorithm, populating the cluster_scope_id for each scope.
+This clusters the data into 300 clusters using the kmedoids fasterPAM algorithm, populating the cluster_scope_id for each scope.
 
 Run `node step-4-optimize.js`
-
-If you need to clear the sqlite database, useful if updating the scripts, you can do so with `python3 utility-clear-database.py`

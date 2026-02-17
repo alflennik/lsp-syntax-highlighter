@@ -7,7 +7,7 @@ const createScopeNameToColor = async () => {
   const debuggingGrammar = {
     scopeName: "source.debug-scopes",
     name: "debugging-grammar",
-    patterns: [{ match: "\\b([a-zA-Z0-9-_.]+)\\b", captures: { 1: { name: "$1" } } }],
+    patterns: [{ match: "\\b([a-zA-Z0-9-_. ]+)\\b", captures: { 1: { name: "$1" } } }],
   }
   const highlighter = await createHighlighter({
     langs: [debuggingGrammar],

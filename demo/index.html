@@ -79,7 +79,7 @@
       padding: 10px 20px;
       position: fixed;
       top: 80px;
-      right: 40px;
+      right: 25px;
       display: inline-block;
     }
   </style>
@@ -205,6 +205,7 @@
         if (event.key === "Shift") {
           document.querySelector('.highlighting-textmate-container').style.opacity = 0
           document.querySelector('.highlighting-semantic-container').style.opacity = 1
+          document.querySelector('.highlighting-semantic-container').style.pointerEvents = 'auto'
         }
         if (event.shiftKey && event.key === "ArrowRight") {
           event.preventDefault()
@@ -264,9 +265,11 @@
         if (event.key === "Shift") {
           document.querySelector('.highlighting-textmate-container').style.opacity = 1
           document.querySelector('.highlighting-semantic-container').style.opacity = 0
+          document.querySelector('.highlighting-semantic-container').style.pointerEvents = 'none'
         }
       })
-
+      
+      document.querySelector('.highlighting-semantic-container').style.pointerEvents = 'none'
       document.querySelector('.highlighting-semantic-container').style.opacity = 0
     }
 

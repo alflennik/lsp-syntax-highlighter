@@ -1,11 +1,11 @@
-# Converter for TextMate Grammar Scopes to Semantic Tokens For LSPs
+# Semantic Token Converter
 
-Converts a TextMate Grammar scope to a semantic token. The semantic token returned will be the one most likely to produce the same color that the TextMate grammar would, based on real-world results gathered from the [shiki](https://www.npmjs.com/package/shiki) collection of prominent themes and grammars.
+Converts a TextMate Grammar scope to a semantic token, allowing you to use TextMate syntax highlighting in a language server.
 
 ## Usage
 
 ```js
-const convertScopeToSemanticToken = require('textmate-grammar-to-semantic-tokens')
+const convertScopeToSemanticToken = require('semantic-token-converter')
 
 const semanticToken = convertScopeToSemanticToken('punctuation.definition.string.html')
 
@@ -17,7 +17,7 @@ A library like [vscode-textmate](https://www.npmjs.com/package/vscode-textmate) 
 ## Installation
 
 ```
-npm install textmate-grammar-to-semantic-tokens
+npm install semantic-token-converter
 ```
 
 In order to use in a VSCode extension, you need add the following to your extension's package.json:
@@ -58,7 +58,25 @@ In order to use in a VSCode extension, you need add the following to your extens
 }
 ```
 
-## Conversion Database
+## Background
+
+Editors like VSCode support two types of syntax highlighting, TextMate Grammars, which are available for every language you've ever heard of, and Semantic Tokens, which can be emitted by language servers under the language server protocol (LSP), which are more powerful but not always widely available.
+
+Unfortunately, language servers are stuck with one of these two options, since the LSP protocol only supports semantic tokens. TextMate Grammars are completely unsupported at this stage. See the (closed) issue here: https://github.com/microsoft/vscode/issues/86329, and more context here: https://github.com/microsoft/vscode/issues/86329.
+
+This package allows you to use a TextMate Grammar in an LSP by converting it to semantic tokens. This will allow you to use your language's existing TextMate Grammar within your LSP, and perhaps more importantly it will make it possible to apply embedded languages' syntax highlighting within your language's syntax highlighting, for example in JavaScript allowing a string like the following to be highlighted properly without needing to fork JavaScript's extremely complicated TextMate Grammar:
+
+```js
+const htmlString = /* html */`<h1>Hello</h1>`
+```
+
+## Methodology
+
+To build the conversion database, I took a list of all the scopes used in the prominent textmate grammars and themes in the shiki library, and used a kmedioids clustering algorithm called fasterPAM to map similar scope to a small number of core scopes. The translation from the scopes to semantic tokens was manual.
+
+## Advanced Usage
+
+### Conversion Database
 
 You can directly import the translation database:
 
@@ -74,22 +92,12 @@ console.log(conversionDatabase) /* {
 } */
 ```
 
-## Building The Database From Scratch
+### Building The Database From Scratch
 
 See the dedicated guide: [./build-database/README.md](./build-database/README.md)
 
-## Background
+### Using the Demo
 
-Editors like VSCode support two types of syntax highlighting, TextMate Grammars, which are available for every language you've ever heard of, and Semantic Tokens, which can be emitted by language servers under the language server protocol (LSP), which are more powerful but not always widely available.
+You can spin up the same demo I used to confirm that the conversions are working. See the dedicated guide: [./demo/README.md](./demo/README.md)
 
-Unfortunately, language servers are stuck with one of these two options, since the LSP protocol only supports semantic tokens. TextMate Grammars are completely unsupported at this stage. See the (closed) issue here: https://github.com/microsoft/vscode/issues/86329, and more context here: https://github.com/microsoft/vscode/issues/86329.
-
-This package allows you to use a TextMate Grammar in an LSP by converting it to semantic tokens. This will allow you to use your language's existing TextMate Grammar within your LSP, and perhaps more importantly it will make it possible to apply embedded languages' syntax highlighting within your language's syntax highlighting, for example in JavaScript allowing a string like the following to be highlighted properly without needing to fork JavaScript's extremely complicated TextMate Grammar:
-
-```js
-const htmlString = /* html */`<h1>Hello</h1>`
-```
-
-## Methodology
-
-To build the conversion database, I took a list of all the rule names in prominent textmate grammars in the shiki library and counted which semantic tokens produced the correct color for each theme. The semantic token with the highest count was the one that ultimately made it to the final conversion database.
+![Screenshot of demo environment](./demo/demo.png)

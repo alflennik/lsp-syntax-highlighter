@@ -6,15 +6,21 @@ const convertScopeToSemanticToken = scope => {
 
   if (exact) return semanticTokensFlipped[exact]
 
-  let i = 0
-  let simplifiedScope = scope
-  while (simplifiedScope.includes(".")) {
-    i += 1
-    if (i > 1000) throw new Error("Infinite loop detected")
-    simplifiedScope = simplifiedScope.split(".").slice(0, -1).join(".")
+  const nestedScopes = scope.split(" ")
 
-    const result = database[simplifiedScope]
-    if (result) return semanticTokensFlipped[result]
+  for (let i = nestedScopes.length - 1; i >= 0; i -= 1) {
+    const nestedScopeComponents = nestedScopes[i].split(".")
+
+    for (let j = nestedScopeComponents.length - 1; j > 0; j -= 1) {
+      const candidate = [
+        ...(i > 0 ? nestedScopes.slice(0, i) : []),
+        nestedScopeComponents.slice(0, j).join("."),
+        ...(i < nestedScopes.length - 1 ? nestedScopes.slice(i) : []),
+      ].join(" ")
+
+      const found = database[candidate]
+      if (found) return semanticTokensFlipped[found]
+    }
   }
 
   return semanticTokensFlipped[database.default]
