@@ -3,16 +3,8 @@ import os
 from collections import defaultdict, namedtuple
 import numpy as np
 from kmedoids import KMedoids
-import re
 
-cluster_count = 300
-
-language_multipliers = {
-    # "js": 100,
-    # "html": 100,
-    # "css": 100,
-    "json": 1000,
-}
+cluster_count = 298 # 300 - the ones mandated in step 4
 
 db_path = os.path.join(os.getcwd(), "data.db")
 
@@ -37,34 +29,20 @@ colors_by_theme_by_scope = defaultdict(dict)
 for scope_name, theme_name, color in colors:
     colors_by_theme_by_scope[scope_name][theme_name] = color
 
-def get_scope_weight(scope_name):
-    scope_weight = 1
-    for language_name, multiplier in language_multipliers.items():
-        if re.search(rf"\b{re.escape(language_name)}\b", scope_name):
-            scope_weight *= multiplier
-    return scope_weight
-
 def custom_distance(colors_by_theme_by_scope1, colors_by_theme_by_scope2):
-    scope_name1, colors_by_theme1 = colors_by_theme_by_scope1
-    scope_name2, colors_by_theme2 = colors_by_theme_by_scope2
-
-    same_weight_total = 0.0
-    comparison_weight_total = 0.0
-
-    scope_weight = max(get_scope_weight(scope_name1), get_scope_weight(scope_name2))
-
+    colors_by_theme1 = colors_by_theme_by_scope1[1]
+    colors_by_theme2 = colors_by_theme_by_scope2[1]
+    same_count = 0
+    count = 0
     for theme_name, color1 in colors_by_theme1.items():
-        comparison_weight_total += scope_weight
-
+        count += 1
         if theme_name not in colors_by_theme2:
             continue
-
         color2 = colors_by_theme2[theme_name]
-
         if color1 == color2:
-            same_weight_total += scope_weight
+            same_count += 1
 
-    ratio = same_weight_total / comparison_weight_total
+    ratio = same_count / count
     distance = 1 - ratio
     return distance
 
@@ -90,26 +68,26 @@ well_known_mappings = {
     "default": "default",
     
     # Built into VSCode
-    "namespace": "entity.name.namespace",
-    "type": "entity.name.type",
-    "type.defaultLibrary": "support.type",
-    "struct": "storage.type.struct",
-    "class": "entity.name.type.class",
-    "class.defaultLibrary": "support.class",
-    "interface": "entity.name.type.interface",
-    "enum": "entity.name.type.enum",
-    "function": "entity.name.function",
-    "function.defaultLibrary": "support.function",
-    "method": "entity.name.function.member",
-    "macro": "entity.name.function.preprocessor",
-    "variable": "variable.other.readwrite , entity.name.variable",
-    "variable.readonly": "variable.other.constant",
-    "variable.readonly.defaultLibrary": "support.constant",
-    "parameter": "variable.parameter",
-    "property": "variable.other.property",
-    "property.readonly": "variable.other.constant.property",
-    "enumMember": "variable.other.enummember",
-    "event": "variable.other.event"
+    # "namespace": "entity.name.namespace",
+    # "type": "entity.name.type",
+    # "type.defaultLibrary": "support.type",
+    # "struct": "storage.type.struct",
+    # "class": "entity.name.type.class",
+    # "class.defaultLibrary": "support.class",
+    # "interface": "entity.name.type.interface",
+    # "enum": "entity.name.type.enum",
+    # "function": "entity.name.function",
+    # "function.defaultLibrary": "support.function",
+    # "method": "entity.name.function.member",
+    # "macro": "entity.name.function.preprocessor",
+    # "variable": "variable.other.readwrite , entity.name.variable",
+    # "variable.readonly": "variable.other.constant",
+    # "variable.readonly.defaultLibrary": "support.constant",
+    # "parameter": "variable.parameter",
+    # "property": "variable.other.property",
+    # "property.readonly": "variable.other.constant.property",
+    # "enumMember": "variable.other.enummember",
+    # "event": "variable.other.event"
 }
 
 for cluster in clusters:

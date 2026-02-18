@@ -61,6 +61,10 @@
     }
     .highlighting-container {
       position: relative;
+
+      .highlighting-textmate * {
+        outline: none;
+      }
       
       > * {
         position: absolute;
@@ -112,8 +116,10 @@
         return
       }
 
-      const defaultThemeName = 'one-dark-pro'
-      const defaultLanguageName = 'html'
+      const urlParams = /theme=(.+)&language=(.+)/.exec(location.hash)
+
+      const defaultThemeName = urlParams?.[1] || 'one-dark-pro'
+      const defaultLanguageName = urlParams?.[2] || 'html'
 
       document.body.insertAdjacentHTML(
         'afterbegin', 
@@ -182,6 +188,8 @@
           lang: languageName,
           theme: `semantic-${themeName}`
         })
+
+        location.hash = `theme=${themeName}&language=${languageName}`
       }
 
       refreshHighlighting()

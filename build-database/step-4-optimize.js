@@ -2,6 +2,8 @@ const sqlite3 = require("sqlite3").verbose()
 const path = require("path")
 const fs = require("fs/promises")
 
+const requiredScopeNamesFromManualTesting = ["entity.other.attribute-name.html", "string"]
+
 const step4 = async () => {
   const scopes = await query(`
     SELECT s1.*, s2.name AS cluster_scope_name
@@ -9,18 +11,25 @@ const step4 = async () => {
       INNER JOIN scopes s2 ON s1.cluster_scope_id = s2.id
   `)
 
-  let newWellKnownScopes = []
+  let selectedScopes = []
   let database = {}
   scopes.forEach(scope => {
     database[scope.name] = scope.cluster_scope_name
 
-    if (
-      !Object.values(wellKnownMappings).includes(scope.cluster_scope_name) &&
-      !newWellKnownScopes.find(each => each.id === scope.cluster_scope_id)
-    ) {
-      newWellKnownScopes.push({ id: scope.cluster_scope_id, name: scope.cluster_scope_name })
+    if (!selectedScopes.find(eachName => eachName === scope.cluster_scope_name)) {
+      selectedScopes.push(scope.cluster_scope_name)
     }
   })
+
+  requiredScopeNamesFromManualTesting.forEach(requiredScopeName => {
+    database[requiredScopeName] = requiredScopeName
+
+    if (!selectedScopes.includes(requiredScopeName)) {
+      selectedScopes.push(requiredScopeName)
+    }
+  })
+
+  selectedScopes.sort((a, b) => a.localeCompare(b))
 
   database = Object.fromEntries(
     Object.entries(database).sort((a, b) => {
@@ -28,11 +37,9 @@ const step4 = async () => {
     }),
   )
 
-  console.log(newWellKnownScopes.map(each => each.name).join("\n"))
-
-  const newWellKnownMappings = Object.fromEntries(
-    newWellKnownScopes.map((scope, index) => {
-      return [`untitled${index + 1}`, scope.name]
+  const semanticTokenMappings = Object.fromEntries(
+    selectedScopes.map((scopeName, index) => {
+      return [`color${index + 1}.version1`, scopeName]
     }),
   )
 
@@ -44,32 +51,9 @@ const step4 = async () => {
 
   await fs.writeFile(
     path.resolve(__dirname, "../semanticTokens.json"),
-    JSON.stringify({ ...wellKnownMappings, ...newWellKnownMappings }, null, 2),
+    JSON.stringify(semanticTokenMappings, null, 2),
     { encoding: "utf8" },
   )
-}
-
-const wellKnownMappings = {
-  namespace: "entity.name.namespace",
-  type: "entity.name.type",
-  "type.defaultLibrary": "support.type",
-  struct: "storage.type.struct",
-  class: "entity.name.type.class",
-  "class.defaultLibrary": "support.class",
-  interface: "entity.name.type.interface",
-  enum: "entity.name.type.enum",
-  function: "entity.name.function",
-  "function.defaultLibrary": "support.function",
-  method: "entity.name.function.member",
-  macro: "entity.name.function.preprocessor",
-  variable: "entity.name.variable",
-  "variable.readonly": "variable.other.constant",
-  "variable.readonly.defaultLibrary": "support.constant",
-  parameter: "variable.parameter",
-  property: "variable.other.property",
-  "property.readonly": "variable.other.constant.property",
-  enumMember: "variable.other.enummember",
-  event: "variable.other.event",
 }
 
 const db = new sqlite3.Database("./data.db", err => {

@@ -80,6 +80,14 @@ const step2 = async () => {
         return
       }
 
+      if (tokenColorSet?.scope?.includes(">")) {
+        return // TODO: I think I should be able to support this
+      }
+
+      if (typeof tokenColorSet?.scope === "string" && tokenColorSet.scope.startsWith(" ")) {
+        return // invalid
+      }
+
       const allScopes = []
       if (tokenColorSet.scope) {
         if (Array.isArray(tokenColorSet.scope)) {

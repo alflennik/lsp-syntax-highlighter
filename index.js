@@ -12,13 +12,13 @@ const convertScopeToSemanticToken = scope => {
     const nestedScopeComponents = nestedScopes[i].split(".")
 
     for (let j = nestedScopeComponents.length - 1; j > 0; j -= 1) {
-      const candidate = [
+      const possible = [
         ...(i > 0 ? nestedScopes.slice(0, i) : []),
         nestedScopeComponents.slice(0, j).join("."),
         ...(i < nestedScopes.length - 1 ? nestedScopes.slice(i) : []),
       ].join(" ")
 
-      const found = database[candidate]
+      const found = database[possible]
       if (found) return semanticTokensFlipped[found]
     }
   }
