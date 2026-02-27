@@ -95,7 +95,7 @@ const generateDemo = async () => {
   const response = await rawResponse.text()
   const namesAndAliasesMatches = response.match(/(name: '([^']+)'|aliases: \[[^\]]*\])/g)
 
-  const names = []
+  let names = []
   const aliasToName = {}
   let latestName
   namesAndAliasesMatches.forEach(matched => {
@@ -110,6 +110,8 @@ const generateDemo = async () => {
       })
     }
   })
+
+  names = names.sort((a, b) => a.localCompare(b))
 
   const samples = {}
 

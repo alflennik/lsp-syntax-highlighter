@@ -1,6 +1,6 @@
 {
   "name": "textmate-grammar-to-semantic-tokens",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Converts a TextMate Grammar scope to the best matching semantic token",
   "main": "index.js",
   "scripts": {},
@@ -46,5 +46,8 @@
     "sqlite3": "^5.1.7",
     "vscode-oniguruma": "^2.0.1",
     "vscode-textmate": "^9.3.2"
+  },
+  "dependencies": {
+    "@shikijs/core": "^3.23.0"
   }
 }

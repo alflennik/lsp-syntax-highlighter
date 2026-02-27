@@ -17,7 +17,7 @@ Run `pip install -r requirements.txt` to finish the install process.
 
 Run `python3 step-1-seed-database.py`
 
-If you see `ModuleNotFoundError: No module named 'numpy'`, you need to activate the environment (see above). A `data.db` file should appear, which contains a sqlite database.
+A `data.db` file should appear, which contains a sqlite database.
 
 Run `node step-2-populate-colors.js`
 
@@ -25,6 +25,8 @@ This will populate the database with color outputs.
 
 Run `python3 step-3-cluster.py`
 
+If you see `ModuleNotFoundError: No module named 'numpy'`, you need to activate the environment (see above).
+
 This clusters the data into 300 clusters using the kmedoids fasterPAM algorithm, populating the cluster_scope_id for each scope.
 
-Run `node step-4-optimize.js`
+Run `node step-4-finalize.js`
