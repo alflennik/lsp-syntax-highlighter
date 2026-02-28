@@ -4,10 +4,10 @@ const fs = require("fs/promises")
 const packageJson = require("../package.json")
 
 const requiredScopeNamesFromManualTesting = [
-  "entity.other.attribute-name.html",
-  "string",
-  "support.type.property-name.json punctuation",
-  "support",
+  // "entity.other.attribute-name.html",
+  // "string",
+  // "support.type.property-name.json punctuation",
+  // "support",
 ]
 
 const step4 = async () => {
@@ -50,7 +50,7 @@ const step4 = async () => {
     ([primaryScopeName, secondaryScopeNames], index) => {
       const color = `color${index + 1}.version${versionNumber}`
 
-      semanticTokenMappings[color] = primaryScopeName.split(" ").filter(scope => scope !== "")
+      semanticTokenMappings[color] = [primaryScopeName]
 
       const fakeCssHex = convertNumberToCssHex(index)
 

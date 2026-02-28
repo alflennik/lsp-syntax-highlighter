@@ -4,7 +4,7 @@ from collections import defaultdict, namedtuple
 import numpy as np
 from kmedoids import KMedoids
 
-cluster_count = 1000
+cluster_count = 300
 
 db_path = os.path.join(os.getcwd(), "data.db")
 
