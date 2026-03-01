@@ -25,7 +25,7 @@ This will populate the database with color outputs.
 
 Run `python3 step-3-cluster.py`
 
-If you see `ModuleNotFoundError: No module named 'numpy'`, you need to activate the environment (see above).
+If you see `ModuleNotFoundError: No module named 'numpy'`, you might need to activate the environment (see above).
 
 This clusters the data into 300 clusters using the kmedoids fasterPAM algorithm, populating the cluster_scope_id for each scope.
 

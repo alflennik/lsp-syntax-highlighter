@@ -1,1 +1,3 @@
 kmedoids
+numpy
+scikit-learn

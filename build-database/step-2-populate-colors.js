@@ -2,105 +2,198 @@ const { createScopeNameToColor, walkObjects } = require("./utilities")
 const sqlite3 = require("sqlite3").verbose()
 
 const step2 = async () => {
-  const { /* bundledLanguages, */ bundledThemes } = await import("shiki")
+  const { bundledLanguages, bundledThemes } = await import("shiki")
   const scopeNameToColor = await createScopeNameToColor()
 
-  // const allGrammars = await Object.fromEntries(
-  //   await Promise.all(
-  //     Object.entries(bundledLanguages).map(async ([name, importer]) => {
-  //       const imported = await importer()
-  //       const grammar = imported.default.at(-1) // Dependent languages will be listed first
-  //       return [grammar.scopeName, grammar]
-  //     }),
-  //   ),
-  // )
-
-  const allThemes = await Object.fromEntries(
+  const allGrammars = await Object.fromEntries(
     await Promise.all(
-      Object.entries(bundledThemes).map(async ([name, importer]) => {
-        const themeModule = await importer()
-        return [name, themeModule.default]
+      Object.entries(bundledLanguages).map(async ([name, importer]) => {
+        const imported = await importer()
+        const grammar = imported.default.at(-1) // Dependent languages will be listed first
+        return [grammar.scopeName, grammar]
       }),
     ),
   )
 
-  const allScopeNamesKeyed = {}
-  // Object.values(allGrammars).forEach(grammar => {
-  //   walkObjects(grammar, object => {
-  //     const isPattern = object.scopeName === undefined
-  //     if (object.name && isPattern) {
-  //       const isValidName = typeof object.name === "string"
-  //       if (!isValidName) return
+  // const allThemes = await Object.fromEntries(
+  //   await Promise.all(
+  //     Object.entries(bundledThemes).map(async ([name, importer]) => {
+  //       const themeModule = await importer()
+  //       return [name, themeModule.default]
+  //     }),
+  //   ),
+  // )
 
-  //       // These mandate specific formatting (e.g. markup.underline, markup.italic) and clash with
-  //       // the whole concept of semantic tokens
-  //       if (object.name.includes("markup")) return
+  const allThemeNames = Object.keys(bundledThemes)
 
-  //       // Handle spaces, which can be used to apply multiple names to one token
-  //       let names
-  //       if (object.name.includes(" ")) {
-  //         names = [object.name, ...object.name.split(" ")]
-  //       } else {
-  //         names = [object.name]
-  //       }
+  const grammarCustomization = { default: { maxDepth: 4 }, "source.json": { maxDepth: 5 } }
 
-  //       names.forEach(name => {
-  //         allScopeNamesKeyed[name] = true
-  //         if (object.name.includes(" ")) return
+  const grammars = [
+    // allGrammars["text.html.basic"],
+    allGrammars["source.js"],
+    // allGrammars["source.css"],
+    allGrammars["source.json"],
+  ]
 
-  //         // Make sure to include the parent scopes, so for "string.unquoted.cmake", it would be
-  //         // "string.unquoted" and "string"
-  //         const scopeNameComponents = name.split(".")
-  //         let componentLength = scopeNameComponents.length - 1
+  let allScopeNamesKeyed = {}
 
-  //         let i = 0
-  //         let maxIterationCount = 1000
+  grammars.forEach(grammar => {
+    console.info("starting", grammar.name)
+    let scopesKeyed = {}
 
-  //         while (componentLength > 0) {
-  //           i += 1
-  //           if (i > maxIterationCount) throw new Error("Max iterations exceeded")
+    let iterationCount = 0
+    const maxIterationCount = 10_000_000
 
-  //           const simplifiedScopeName = scopeNameComponents.slice(0, componentLength).join(".")
+    const { maxDepth } = grammarCustomization[grammar.name] ?? grammarCustomization.default
 
-  //           allScopeNamesKeyed[simplifiedScopeName] = true
-  //           componentLength -= 1
-  //         }
-  //       })
-  //     }
-  //   })
-  // })
+    const context = {
+      scopeString: `${grammar.scopeName}`,
+      depthOfRecursion: Object.fromEntries(Object.keys(grammar.repository).map(name => [name, 0])),
+    }
 
-  Object.values(allThemes).forEach(theme => {
-    theme.tokenColors.forEach(tokenColorSet => {
-      if (!tokenColorSet?.settings?.foreground) {
-        // One feature Textmate Grammars support is "falling through" - basically it's possible to
-        // decouple the font style, background color and text color across different selectors.
-        // I haven't figured out a way to replicate this, so I decided to discard settings that omit
-        // a text color, basically it's better to get the color right than the font style
+    context.depthOfRecursion.$self = 0
+
+    const handlePattern = (pattern, contextUncloned) => {
+      if (!pattern) {
+        throw new Error("unexpected")
+      }
+
+      const context = structuredClone(contextUncloned) // Avoid issues with reference types
+
+      if (context.scopeString.split(" ").length + 1 > maxDepth) {
         return
       }
 
-      const allScopes = []
-      if (tokenColorSet.scope) {
-        if (Array.isArray(tokenColorSet.scope)) {
-          allScopes.push(...tokenColorSet.scope)
-        } else if (tokenColorSet.scope.includes(",")) {
-          allScopes.push(...tokenColorSet.scope.split(",").map(scope => scope.trim()))
-        } else {
-          allScopes.push(tokenColorSet.scope)
+      iterationCount += 1
+      if (iterationCount > maxIterationCount) {
+        throw new Error("Max iteration count exceeded")
+      }
+      if (iterationCount % 10_000 === 0) {
+        console.info(iterationCount, "patterns processed")
+      }
+
+      if (pattern.include) {
+        if (Object.keys(pattern) > 1) {
+          throw new Error("unexpected")
+        }
+
+        if (!(pattern.include.startsWith("#") || pattern.include === "$self")) {
+          return // embedded language
+        }
+
+        const repositoryName = pattern.include === "$self" ? "$self" : pattern.include.slice(1)
+
+        const currentDepthOfRecursion = context.depthOfRecursion[repositoryName]
+        if (currentDepthOfRecursion !== 0) return
+
+        context.depthOfRecursion[repositoryName] += 1
+
+        const repository = repositoryName === "$self" ? grammar : grammar.repository[repositoryName]
+
+        if (!repository) return // Typo (happened with HTML)
+
+        handlePattern(repository, context)
+
+        return
+      }
+
+      const nameFormatted = pattern.name ? ` ${pattern.name}` : ""
+
+      context.scopeString = `${context.scopeString}${nameFormatted}`
+
+      if (nameFormatted) {
+        scopesKeyed[context.scopeString] = true
+      }
+
+      Object.values(pattern.beginCaptures ?? {}).map(beginCapture => {
+        handlePattern(beginCapture, context)
+      })
+
+      Object.values(pattern.captures ?? {}).map(capture => {
+        handlePattern(capture, context)
+      })
+
+      if (pattern.patterns) {
+        pattern.patterns.forEach(pattern => {
+          handlePattern(pattern, context)
+        })
+      }
+
+      Object.values(pattern.endCaptures ?? {}).map(endCapture => {
+        handlePattern(endCapture, context)
+      })
+    }
+
+    grammar.patterns.forEach(pattern => {
+      handlePattern(pattern, context)
+    })
+
+    // Now eliminate useless scopes
+
+    let scopes = Object.keys(scopesKeyed)
+
+    console.info(scopes.length, "scopes found")
+
+    scopesKeyed = {}
+
+    scopes.forEach((scopeName, index) => {
+      if (index !== 0 && index % 500 === 0) {
+        console.info(index, "scopes tested")
+      }
+
+      const colorsByTheme = Object.fromEntries(
+        allThemeNames.map(themeName => {
+          const color = scopeNameToColor({ scopeName, themeName })
+          return [themeName, color]
+        }),
+      )
+
+      const splitScopes = scopeName.split(" ").map(nested => nested.split("."))
+
+      for (let i = splitScopes.length - 1; i >= 0; i -= 1) {
+        for (let j = splitScopes[i].length - 1; j >= 0; j -= 1) {
+          const removed = splitScopes[i].pop()
+
+          const comparison = splitScopes
+            .filter(nested => nested.length !== 0)
+            .map(nested => nested.join("."))
+            .join(" ")
+
+          const comparisonColors = allThemeNames.map(themeName => {
+            const color = scopeNameToColor({ scopeName: comparison, themeName })
+            return [themeName, color]
+          })
+
+          let score = 0
+          let total = allThemeNames.length
+
+          comparisonColors.forEach(([themeName, color]) => {
+            if (color === colorsByTheme[themeName]) {
+              score += 1
+            }
+          })
+
+          if (score !== total) {
+            splitScopes[i].push(removed)
+            break
+          }
         }
       }
-      allScopes.forEach(scope => {
-        allScopeNamesKeyed[scope] = true
-      })
+
+      const simplified = splitScopes
+        .filter(nested => nested.length !== 0)
+        .map(nested => nested.join("."))
+        .join(" ")
+
+      scopesKeyed[simplified] = true
     })
+
+    console.info(Object.keys(scopesKeyed).length, "final scopes found")
+
+    allScopeNamesKeyed = { ...allScopeNamesKeyed, ...scopesKeyed }
   })
 
-  allScopeNamesKeyed.default = true // Selector with no effect
-
   const allScopeNames = Object.keys(allScopeNamesKeyed)
-
-  const allThemeNames = Object.keys(bundledThemes)
 
   const db = new sqlite3.Database("./data.db", err => {
     if (err) throw err
@@ -122,34 +215,10 @@ const step2 = async () => {
   const themes = await query(`SELECT id, name FROM themes`)
 
   for (scopeName of allScopeNames) {
-    // let specificityMatters = false
-
-    // let simplifiedScopeName
-    // if (scopeName.includes(".")) {
-    //   simplifiedScopeName = scopeName.split(".").slice(0, -1).join(".")
-    // } else {
-    //   specificityMatters = true
-    // }
-
     const themeColors = themes.map(theme => {
       const color = scopeNameToColor({ scopeName, themeName: theme.name })
-
-      // let simplifiedScopeNameColor
-      // if (simplifiedScopeName) {
-      //   simplifiedScopeNameColor = scopeNameToColor({
-      //     scopeName: simplifiedScopeName,
-      //     themeName: theme.name,
-      //   })
-      // }
-      // if (simplifiedScopeNameColor !== color) specificityMatters = true
-
       return [theme.id, color]
     })
-
-    // if (!specificityMatters) {
-    //   console.log("❌", scopeName)
-    //   continue
-    // }
 
     await query(`INSERT INTO scopes (name) VALUES ('${scopeName}')`)
 
@@ -160,8 +229,6 @@ const step2 = async () => {
       .join(", ")
 
     await query(`INSERT INTO colors (theme_id, scope_id, color) VALUES ${themeColorsFormatted}`)
-
-    // console.log("✅", scopeName)
   }
 
   await new Promise(resolve => {
