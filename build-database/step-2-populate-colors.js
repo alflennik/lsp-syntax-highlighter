@@ -26,7 +26,7 @@ const step2 = async () => {
 
   const allThemeNames = Object.keys(bundledThemes)
 
-  const grammarCustomization = { default: { maxDepth: 4 }, "source.json": { maxDepth: 5 } }
+  const grammarCustomization = { default: { maxDepth: 4 }, json: { maxDepth: 5 } }
 
   const grammars = [
     // allGrammars["text.html.basic"],

@@ -3,12 +3,12 @@ const path = require("path")
 const fs = require("fs/promises")
 const packageJson = require("../package.json")
 
-const requiredScopeNamesFromManualTesting = [
-  // "entity.other.attribute-name.html",
-  // "string",
-  // "support.type.property-name.json punctuation",
-  // "support",
-]
+// const requiredScopeNamesFromManualTesting = [
+//   "entity.other.attribute-name.html",
+//   "string",
+//   "support.type.property-name.json punctuation",
+//   "support",
+// ]
 
 const step4 = async () => {
   const currentMajorVersion = parseInt(packageJson.version.match(/^\d+/)[0])
@@ -32,32 +32,40 @@ const step4 = async () => {
     clusteredScopeToScopes[scope.cluster_scope_name].push(scope.name)
   })
 
-  requiredScopeNamesFromManualTesting.forEach(scopeName => {
-    clusteredScopeToScopes[scopeName] = []
-  })
+  // requiredScopeNamesFromManualTesting.forEach(scopeName => {
+  //   clusteredScopeToScopes[scopeName] = []
+  // })
 
-  const fakeScopeMatchingTheme = {
-    displayName: "Fake Theme For Scope Matching",
-    name: "fake-scope-matching-theme",
-    tokenColors: [],
-  }
+  // const fakeScopeMatchingTheme = {
+  //   displayName: "Fake Theme For Scope Matching",
+  //   name: "fake-scope-matching-theme",
+  //   tokenColors: [],
+  // }
 
-  const convertNumberToCssHex = number => "#" + (number + 1).toString().padStart(6, "0")
+  // const convertNumberToCssHex = number => "#" + (number + 1).toString().padStart(6, "0")
+
+  const database = {}
 
   const semanticTokenMappings = {}
 
   Object.entries(clusteredScopeToScopes).forEach(
     ([primaryScopeName, secondaryScopeNames], index) => {
-      const color = `color${index + 1}.version${versionNumber}`
+      const color = `color${index + 1}`
+      const colorVersion = `color${index + 1}.version${versionNumber}`
 
-      semanticTokenMappings[color] = [primaryScopeName]
+      semanticTokenMappings[colorVersion] = [primaryScopeName]
 
-      const fakeCssHex = convertNumberToCssHex(index)
-
-      fakeScopeMatchingTheme.tokenColors.push({
-        scope: [primaryScopeName, ...secondaryScopeNames],
-        settings: { foreground: fakeCssHex },
+      database[primaryScopeName] = color
+      secondaryScopeNames.forEach(secondaryScopeName => {
+        database[secondaryScopeName] = color
       })
+
+      // const fakeCssHex = convertNumberToCssHex(index)
+
+      // fakeScopeMatchingTheme.tokenColors.push({
+      //   scope: [primaryScopeName, ...secondaryScopeNames],
+      //   settings: { foreground: fakeCssHex },
+      // })
     },
   )
 
@@ -107,9 +115,15 @@ ${JSON.stringify(capabilities, null, 2)}
 
   await fs.writeFile(
     path.resolve(__dirname, "../database.json"),
-    JSON.stringify(fakeScopeMatchingTheme, null, 2),
+    JSON.stringify(database, null, 2),
     { encoding: "utf8" },
   )
+
+  // await fs.writeFile(
+  //   path.resolve(__dirname, "../database.json"),
+  //   JSON.stringify(fakeScopeMatchingTheme, null, 2),
+  //   { encoding: "utf8" },
+  // )
 
   await fs.writeFile(path.resolve(__dirname, "../contributes.md"), contributesMd, {
     encoding: "utf8",
