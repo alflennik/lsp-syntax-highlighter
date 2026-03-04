@@ -1,5 +1,4 @@
 node_modules
 data.db
 .DS_Store
-semanticThemes.json
-samples.json
+results.json

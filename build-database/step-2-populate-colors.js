@@ -35,7 +35,9 @@ const step2 = async () => {
     allGrammars["source.json"],
   ]
 
-  let allScopeNamesKeyed = {}
+  let allScopeNamesKeyed = {
+    default: true, // First color is the one that shows when the color is unknown
+  }
 
   grammars.forEach(grammar => {
     console.info("starting", grammar.name)

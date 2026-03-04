@@ -12,10 +12,6 @@ const colorsToIndexes = Object.fromEntries(
 )
 
 const Highlighter = async ({ languages }) => {
-  if (!languages.find(language => language.name === "json")) {
-    throw new Error("Not yet supported")
-  }
-
   // See https://www.npmjs.com/package/vscode-textmate
   const wasmBin = fs.readFileSync(
     path.join(__dirname, "./node_modules/vscode-oniguruma/release/onig.wasm"),
@@ -36,19 +32,18 @@ const Highlighter = async ({ languages }) => {
   const registry = new vsctm.Registry({
     onigLib: vscodeOnigurumaLib,
     loadGrammar: scopeName => {
-      if (scopeName === "source.json") {
-        return languages.find(language => language.name === "json")
-      }
-      // console.log(`Unknown scope name: ${scopeName}`);
-      return null
+      return languages.find(language => language.scopeName === scopeName)
     },
   })
 
   // Load the grammar and any other grammars included by it async.
-  const grammar = await registry.loadGrammar("source.json")
+  const grammars = {}
+  for (const language of languages) {
+    grammars[language.name] = await registry.loadGrammar(language.scopeName)
+  }
 
-  const highlight = (code, { language, lineOffset = 0, columnOffset = 0 }) => {
-    if (language !== "json") throw new Error("Not yet supported")
+  const highlight = (code, { language: languageName, lineOffset = 0, columnOffset = 0 }) => {
+    const grammar = grammars[languageName]
 
     const grammarTokens = []
 
@@ -65,34 +60,34 @@ const Highlighter = async ({ languages }) => {
     })
 
     const tokens = grammarTokens.map(({ lineIndex, columnIndex, length, scopes }) => {
-      const semanticToken = convertScopesToColor(scopes)
+      const semanticToken = convertScopesToColor(scopes) ?? database.default
 
       return {
         lineIndex: lineOffset + lineIndex,
-        startIndex: columnOffset + columnIndex,
+        columnIndex: columnOffset + columnIndex,
         length,
         semanticToken,
       }
     })
 
     let lastLineIndex = 0
-    let lastStartIndex = 0
+    let lastColumnIndex = 0
 
     const encodedTokens = []
 
-    tokens.forEach(({ lineIndex, startIndex, length, semanticToken }) => {
+    tokens.forEach(({ lineIndex, columnIndex, length, semanticToken }) => {
       const semanticTokenIndex = colorsToIndexes[semanticToken]
 
       encodedTokens.push(
         lineIndex - lastLineIndex,
-        startIndex - lastStartIndex,
+        columnIndex - lastColumnIndex,
         length,
         semanticTokenIndex,
         tokenModifiersEncoded,
       )
 
       lastLineIndex = lineIndex
-      lastStartIndex = startIndex
+      lastColumnIndex = columnIndex
     })
 
     return { encodedTokens, tokens }

@@ -1,92 +1,48 @@
 const { createScopeNameToColor } = require("../build-database/utilities")
-const convertScopeToSemanticToken = require("../index")
-const semanticTokens = require("../semanticTokens.json")
+const Highlighter = require("../index")
 const fs = require("fs/promises")
 const path = require("path")
+const database = require("../database.json")
 
 const generateDemo = async () => {
-  const { /* bundledLanguages, */ bundledThemes } = await import("shiki")
+  const {
+    createHighlighter,
+    bundledLanguages: bundledLanguagesRaw,
+    bundledThemes,
+  } = await import("shiki")
+
+  // TEMP
+  const bundledLanguages = Object.fromEntries(
+    Object.entries(bundledLanguagesRaw).filter(([name]) => {
+      return [
+        "javascript",
+        "json",
+        // "html",
+        // "css"
+      ].includes(name)
+    }),
+  )
+
   const scopeNameToColor = await createScopeNameToColor()
 
-  // const allGrammars = await Object.fromEntries(
-  //   await Promise.all(
-  //     Object.entries(bundledLanguages).map(async ([name, importer]) => {
-  //       const imported = await importer()
-  //       const grammar = imported.default.at(-1) // Dependent languages will be listed first
-  //       return [grammar.scopeName, grammar]
-  //     }),
-  //   ),
-  // )
+  const allGrammars = await Object.fromEntries(
+    await Promise.all(
+      Object.entries(bundledLanguages).map(async ([name, importer]) => {
+        const imported = await importer()
+        const grammar = imported.default.at(-1) // Dependent languages will be listed first
+        return [grammar.name, grammar]
+      }),
+    ),
+  )
 
   const allThemes = await Object.fromEntries(
     await Promise.all(
       Object.entries(bundledThemes).map(async ([name, importer]) => {
         const themeModule = await importer()
         const theme = themeModule.default
-        const themeFixed = {
-          ...theme,
-          tokenColors: theme.tokenColors.filter(tokenColorSet => {
-            // One feature Textmate Grammars support is "falling through" - basically it's possible to
-            // decouple the font style, background color and text color across different selectors.
-            // I haven't figured out a way to replicate this, so I decided to discard settings that omit
-            // a text color, basically it's better to get the color right than the font style
-            return !!tokenColorSet?.settings?.foreground
-          }),
-        }
-        return [name, themeFixed]
+        return [name, theme]
       }),
     ),
-  )
-
-  const semanticThemes = Object.fromEntries(
-    Object.values(allThemes).map(theme => {
-      const semanticTokensToColors = Object.fromEntries(
-        Object.entries(semanticTokens).map(([semanticToken, scopeName]) => {
-          const color = scopeNameToColor({ scopeName, themeName: theme.name })
-          return [semanticToken, color]
-        }),
-      )
-
-      const allScopes = []
-      theme.tokenColors.forEach(tokenColorSet => {
-        if (tokenColorSet.scope) {
-          if (Array.isArray(tokenColorSet.scope)) {
-            allScopes.push(...tokenColorSet.scope)
-          } else if (tokenColorSet.scope.includes(",")) {
-            allScopes.push(...tokenColorSet.scope.split(",").map(scope => scope.trim()))
-          } else {
-            allScopes.push(tokenColorSet.scope)
-          }
-        }
-      })
-
-      const tokenColors = []
-      allScopes.forEach(scopeName => {
-        const semanticToken = convertScopeToSemanticToken(scopeName)
-        if (!semanticTokensToColors[semanticToken]) {
-          debugger
-        }
-        const shikiSettings = JSON.parse(semanticTokensToColors[semanticToken])
-
-        const settings = {
-          foreground: shikiSettings.color,
-          fontStyle: (() => {
-            if (shikiSettings.fontStyle === -1) return undefined
-            if (shikiSettings.fontStyle === 0) return "normal"
-            if (shikiSettings.fontStyle === 1) return "italic"
-            if (shikiSettings.fontStyle === 2) return "bold"
-            if (shikiSettings.fontStyle === 4) return "underline"
-            if (shikiSettings.fontStyle === 8) return "strikethrough"
-          })(),
-        }
-
-        tokenColors.push({ scope: scopeName, settings })
-      })
-
-      const semanticThemeName = `semantic-${theme.name}`
-
-      return [semanticThemeName, { ...theme, name: semanticThemeName, tokenColors }]
-    }),
   )
 
   const rawResponse = await fetch(
@@ -111,7 +67,7 @@ const generateDemo = async () => {
     }
   })
 
-  names = names.sort((a, b) => a.localCompare(b))
+  names = names.filter(name => allGrammars[name]).sort((a, b) => a.localeCompare(b))
 
   const samples = {}
 
@@ -126,17 +82,118 @@ const generateDemo = async () => {
     }),
   )
 
-  await fs.writeFile(
-    path.resolve(__dirname, "./semanticThemes.json"),
-    JSON.stringify(semanticThemes, null, 2),
-    { encoding: "utf8" },
+  const highlighter = await createHighlighter({
+    themes: Object.keys(bundledThemes),
+    langs: Object.keys(bundledLanguages),
+  })
+
+  const { highlight } = await Highlighter({ languages: Object.values(allGrammars) })
+
+  const results = {}
+
+  Object.entries(samples).map(([languageName, code]) => {
+    console.log(`Highlighting ${languageName} sample`)
+    results[languageName] = {}
+
+    const grammar = allGrammars[languageName]
+    Object.entries(allThemes).forEach(([themeName, theme]) => {
+      const start1 = performance.now()
+      const { tokens: textmateLines } = highlighter.codeToTokens(code, {
+        lang: grammar.name,
+        theme,
+      })
+
+      results[languageName][themeName] = {}
+
+      let lastOffset = 0
+      const tokens = textmateLines.map(textmateTokens => {
+        let columnOffset = lastOffset
+        return textmateTokens.map(textmateToken => {
+          lastOffset = textmateToken.offset + textmateToken.content.length + 1 // + 1 for newlines
+          return {
+            content: textmateToken.content,
+            columnIndex: textmateToken.offset - columnOffset,
+            color: textmateToken.color,
+            fontStyle: getFontStyle(textmateToken.fontStyle),
+          }
+        })
+      })
+
+      results[languageName][themeName].textmate = tokens
+      const duration1 = performance.now() - start1
+      const start2 = performance.now()
+
+      const tokens2 = []
+      const { tokens: semanticTokens } = highlight(code, { language: languageName })
+
+      let currentLine = []
+      let currentLineIndex = 0
+      let currentOffset = 0
+
+      semanticTokens.forEach(({ columnIndex, length, semanticToken }) => {
+        const content = code.slice(currentOffset, currentOffset + length)
+        // console.log(content)
+        currentOffset += length
+
+        const { color, fontStyle } = (() => {
+          const scopeName = databaseFlipped[semanticToken]
+          const colorSettingsString = scopeNameToColor({ scopeName, themeName })
+          const colorSettings = JSON.parse(colorSettingsString)
+          return { color: colorSettings.color, fontStyle: getFontStyle(colorSettings.fontStyle) }
+        })()
+
+        if (content === "\n") {
+          tokens2.push([])
+        } else {
+          currentLine.push({ content, columnIndex, color, fontStyle })
+        }
+
+        // let iterationCount = 0
+        // let maxIterationCount = 100
+        // while (true) {
+        // iterationCount += 1
+        // if (iterationCount > maxIterationCount) throw new Error("Max iteration count exceeded")
+        // if (code[currentOffset] !== "\n") break
+        if (code[currentOffset] !== "\n" || content === "\n") return
+        currentOffset += 1
+        currentLineIndex += 1
+        tokens2.push(currentLine)
+        currentLine = []
+        // }
+      })
+
+      tokens2.push(currentLine)
+
+      results[languageName][themeName].semantic = tokens2
+      const duration2 = performance.now() - start2
+      console.log("textmate", duration1, "semantic", duration2)
+    })
+  })
+
+  const backgroundColors = Object.fromEntries(
+    Object.entries(allThemes).map(([themeName, theme]) => {
+      return [themeName, theme.colors["editor.background"]]
+    }),
   )
 
   await fs.writeFile(
-    path.resolve(__dirname, "./samples.json"),
-    JSON.stringify([aliasToName, samples], null, 2),
+    path.resolve(__dirname, "./results.json"),
+    JSON.stringify({ results, backgroundColors }, null, 2),
     { encoding: "utf8" },
   )
 }
+
+const getFontStyle = number => {
+  if (number === -1) return undefined
+  if (number === 0) return "normal"
+  if (number === 1) return "italic"
+  if (number === 2) return "bold"
+  if (number === 4) return "underline"
+  if (number === 8) return "strikethrough"
+}
+
+const databaseFlipped = Object.fromEntries(
+  Object.entries(database).map(([scope, color]) => [color, scope]),
+)
 
 generateDemo()
