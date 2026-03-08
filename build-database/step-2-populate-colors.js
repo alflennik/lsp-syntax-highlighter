@@ -15,28 +15,82 @@ const step2 = async () => {
     ),
   )
 
-  // const allThemes = await Object.fromEntries(
-  //   await Promise.all(
-  //     Object.entries(bundledThemes).map(async ([name, importer]) => {
-  //       const themeModule = await importer()
-  //       return [name, themeModule.default]
-  //     }),
-  //   ),
-  // )
+  const allThemes = await Object.fromEntries(
+    await Promise.all(
+      Object.entries(bundledThemes).map(async ([name, importer]) => {
+        const themeModule = await importer()
+        return [name, themeModule.default]
+      }),
+    ),
+  )
+
+  const allScopesInThemes = {}
+  const cleanScope = scope => {
+    return scope.replace(/[ ,>*|]/g, "")
+  }
+  Object.values(allThemes).forEach(theme => {
+    theme.tokenColors.forEach(tokenColorSet => {
+      if (tokenColorSet.scope) {
+        if (Array.isArray(tokenColorSet.scope)) {
+          tokenColorSet.scope.forEach(scope => {
+            scope.split(" ").forEach(scope => {
+              if (scope.match(/[ ,>*|]/ || scope.match(/^[.\-]/))) return
+              allScopesInThemes[cleanScope(scope)] = true
+            })
+          })
+        } else if (tokenColorSet.scope.includes(",")) {
+          tokenColorSet.scope.split(",").forEach(scope => {
+            scope.split(" ").forEach(scope => {
+              if (scope.match(/[ ,>*|]/ || scope.match(/^[.\-]/))) return
+              allScopesInThemes[cleanScope(scope)]
+            })
+          })
+        } else {
+          tokenColorSet.scope.split(" ").forEach(scope => {
+            if (scope.match(/[ ,>*|]/ || scope.match(/^[.\-]/))) return
+            allScopesInThemes[cleanScope(scope)]
+          })
+        }
+      }
+    })
+  })
+  const scopeUsedInThemes = scope => {
+    if (allScopesInThemes[scope]) return true
+    const segments = scope.split(".")
+    let iterationCount = 0
+    for (let i = segments.length - 1; i >= 0; i -= 1) {
+      iterationCount += 1
+      // punctuation.definition.string.begin.js shouldn't match punctuation.definition
+      if (iterationCount > 3) return false
+      // support.variable.property.target.js shouldn't match just support
+      if (i === 1) return false
+
+      if (allScopesInThemes[segments.slice(0, i).join(".")]) return true
+    }
+    return false
+  }
 
   const allThemeNames = Object.keys(bundledThemes)
 
-  const grammarCustomization = { default: { maxDepth: 4 }, json: { maxDepth: 5 } }
+  const grammarCustomization = {
+    default: { maxDepth: 4, maxRecursion: 1 },
+    html: { maxDepth: 7, maxRecursion: 4 },
+    css: { maxDepth: 5, maxRecursion: 2 },
+    json: { maxDepth: 10, maxRecursion: 10 },
+    javascript: { maxDepth: 6, maxRecursion: 1, allowPotentialDeadEnds: false },
+    python: { maxDepth: 7, maxRecursion: 1 },
+  }
 
   const grammars = [
     // allGrammars["text.html.basic"],
-    allGrammars["source.js"],
+    // allGrammars["source.js"],
     // allGrammars["source.css"],
     allGrammars["source.json"],
+    // allGrammars["source.python"],
   ]
 
   let allScopeNamesKeyed = {
-    default: true, // First color is the one that shows when the color is unknown
+    default: true, // Default is not a real scope so it shows the color when the scope is unknown
   }
 
   grammars.forEach(grammar => {
@@ -46,7 +100,11 @@ const step2 = async () => {
     let iterationCount = 0
     const maxIterationCount = 10_000_000
 
-    const { maxDepth } = grammarCustomization[grammar.name] ?? grammarCustomization.default
+    const {
+      maxDepth,
+      maxRecursion,
+      allowPotentialDeadEnds = true,
+    } = grammarCustomization[grammar.name] ?? grammarCustomization.default
 
     const context = {
       scopeString: `${grammar.scopeName}`,
@@ -56,6 +114,13 @@ const step2 = async () => {
     context.depthOfRecursion.$self = 0
 
     const handlePattern = (pattern, contextUncloned) => {
+      if (!allowPotentialDeadEnds && pattern.name && !scopeUsedInThemes(pattern.name)) {
+        // console.log("no", pattern.name)
+        return
+      } else if (pattern.name) {
+        // console.log("yes", pattern.name)
+      }
+
       if (!pattern) {
         throw new Error("unexpected")
       }
@@ -86,7 +151,7 @@ const step2 = async () => {
         const repositoryName = pattern.include === "$self" ? "$self" : pattern.include.slice(1)
 
         const currentDepthOfRecursion = context.depthOfRecursion[repositoryName]
-        if (currentDepthOfRecursion !== 0) return
+        if (currentDepthOfRecursion >= maxRecursion) return
 
         context.depthOfRecursion[repositoryName] += 1
 
@@ -194,6 +259,42 @@ const step2 = async () => {
 
     allScopeNamesKeyed = { ...allScopeNamesKeyed, ...scopesKeyed }
   })
+
+  // Get remaining scopes directly from themes
+  // Object.values(allThemes).forEach(theme => {
+  //   theme.tokenColors.forEach(tokenColorSet => {
+  //     if (!tokenColorSet?.settings?.foreground) {
+  //       // One feature Textmate Grammars support is "falling through" - basically it's possible to
+  //       // decouple the font style, background color and text color across different selectors.
+  //       // I haven't figured out a way to replicate this, so I decided to discard settings that omit
+  //       // a text color, basically it's better to get the color right than the font style
+  //       return
+  //     }
+
+  //     // ">" Not supported now, maybe later
+  //     if (Array.isArray(tokenColorSet.scope)) {
+  //       tokenColorSet.scope = tokenColorSet.scope?.filter(scope => !scope.includes(">"))
+  //       if (!tokenColorSet.scope?.length) return
+  //     } else if (tokenColorSet.scope?.includes(">")) {
+  //       return
+  //     }
+
+  //     const allScopes = []
+  //     if (tokenColorSet.scope) {
+  //       if (Array.isArray(tokenColorSet.scope)) {
+  //         allScopes.push(...tokenColorSet.scope)
+  //       } else if (tokenColorSet.scope.includes(",")) {
+  //         allScopes.push(...tokenColorSet.scope.split(",").map(scope => scope.trim()))
+  //       } else {
+  //         allScopes.push(tokenColorSet.scope)
+  //       }
+  //     }
+
+  //     allScopes.forEach(scope => {
+  //       allScopeNamesKeyed[scope] = true
+  //     })
+  //   })
+  // })
 
   const allScopeNames = Object.keys(allScopeNamesKeyed)
 

@@ -99,9 +99,6 @@ const Highlighter = async ({ languages }) => {
 const databaseEntries = Object.entries(database)
 
 const matchScope = (providedScope, databaseScope) => {
-  if (!databaseScope) {
-    debugger
-  }
   const databaseScopeSegments = databaseScope.split(".")
   const providedScopeSegments = providedScope.split(".")
   for (let i = 0; i < databaseScopeSegments.length; i += 1) {

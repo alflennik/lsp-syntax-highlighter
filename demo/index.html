@@ -35,7 +35,7 @@
         }
       }
       .label-container {
-        padding: 14px 30px 0 14px;
+        padding: 14px 30px 14px 14px;
         display: flex;
         gap: 20px;
         align-items: center;
@@ -120,7 +120,7 @@
         }
 
         const allLanguageNames = Object.keys(results)
-        const allThemeNames = Object.keys(results.json)
+        const allThemeNames = Object.keys(backgroundColors)
 
         const urlParams = /theme=(.+)&language=(.+)/.exec(location.hash)
 

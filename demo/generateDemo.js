@@ -15,10 +15,10 @@ const generateDemo = async () => {
   const bundledLanguages = Object.fromEntries(
     Object.entries(bundledLanguagesRaw).filter(([name]) => {
       return [
-        "javascript",
-        "json",
+        // "javascript",
+        // "json",
         // "html",
-        // "css"
+        "css",
       ].includes(name)
     }),
   )
@@ -132,8 +132,10 @@ const generateDemo = async () => {
 
       semanticTokens.forEach(({ columnIndex, length, semanticToken }) => {
         const content = code.slice(currentOffset, currentOffset + length)
-        // console.log(content)
         currentOffset += length
+        if (themeName === "one-light" && content.includes("thumb")) {
+          debugger
+        }
 
         const { color, fontStyle } = (() => {
           const scopeName = databaseFlipped[semanticToken]
