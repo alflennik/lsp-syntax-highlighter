@@ -11,14 +11,16 @@ const generateDemo = async () => {
     bundledThemes,
   } = await import("shiki")
 
-  // TEMP
+  // TEMP (I hope)
   const bundledLanguages = Object.fromEntries(
     Object.entries(bundledLanguagesRaw).filter(([name]) => {
+      // prettier-ignore
       return [
-        // "javascript",
-        // "json",
-        // "html",
+        "javascript",
+        "json",
+        "html",
         "css",
+        "python",
       ].includes(name)
     }),
   )
@@ -133,8 +135,8 @@ const generateDemo = async () => {
       semanticTokens.forEach(({ columnIndex, length, semanticToken }) => {
         const content = code.slice(currentOffset, currentOffset + length)
         currentOffset += length
-        if (themeName === "one-light" && content.includes("thumb")) {
-          debugger
+        if (themeName === "catppuccin-macchiato" && content.includes('"')) {
+          // debugger
         }
 
         const { color, fontStyle } = (() => {
@@ -195,7 +197,7 @@ const getFontStyle = number => {
 }
 
 const databaseFlipped = Object.fromEntries(
-  Object.entries(database).map(([scope, color]) => [color, scope]),
+  Object.entries(database.primary).map(([scope, { semanticToken }]) => [semanticToken, scope]),
 )
 
 generateDemo()

@@ -87,7 +87,8 @@
         right: 25px;
         display: inline-block;
       }
-      .highlighting-textmate, .highlighting-semantic {
+      .highlighting-textmate,
+      .highlighting-semantic {
         padding: 20px;
       }
     </style>
@@ -125,7 +126,8 @@
         const urlParams = /theme=(.+)&language=(.+)/.exec(location.hash)
 
         const defaultThemeName = urlParams?.[1] || "one-dark-pro"
-        const defaultLanguageName = urlParams?.[2] || "json"
+        let defaultLanguageName = urlParams?.[2] || "json"
+        if (!results[defaultLanguageName]) defaultLanguageName = Object.keys(results)[0]
 
         document.body.insertAdjacentHTML(
           "afterbegin",

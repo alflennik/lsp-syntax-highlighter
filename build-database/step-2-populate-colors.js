@@ -82,15 +82,15 @@ const step2 = async () => {
   }
 
   const grammars = [
-    // allGrammars["text.html.basic"],
-    // allGrammars["source.js"],
-    // allGrammars["source.css"],
+    allGrammars["text.html.basic"],
+    allGrammars["source.js"],
+    allGrammars["source.css"],
     allGrammars["source.json"],
-    // allGrammars["source.python"],
+    allGrammars["source.python"],
   ]
 
-  let allScopeNamesKeyed = {
-    default: true, // Default is not a real scope so it shows the color when the scope is unknown
+  let allScopeDataByName = {
+    default: {}, // Default is not a real scope so it shows the color when the scope is unknown
   }
 
   grammars.forEach(grammar => {
@@ -201,7 +201,7 @@ const step2 = async () => {
 
     console.info(scopes.length, "scopes found")
 
-    scopesKeyed = {}
+    scopeDataByName = {}
 
     scopes.forEach((scopeName, index) => {
       if (index !== 0 && index % 500 === 0) {
@@ -252,12 +252,22 @@ const step2 = async () => {
         .map(nested => nested.join("."))
         .join(" ")
 
-      scopesKeyed[simplified] = true
+      if (
+        !scopeDataByName[simplified] ||
+        // The shortest scope stack associated with the simplified scope usually gets better ranking
+        // results in step 4
+        scopeDataByName[simplified].originalScopeStack.length > scopeName
+      )
+        scopeDataByName[simplified] = {
+          // Technically multiple scope stacks will produce the same simplified scope, but for now I
+          // will see if only persisting one still produces good results
+          originalScopeStack: scopeName,
+        }
     })
 
     console.info(Object.keys(scopesKeyed).length, "final scopes found")
 
-    allScopeNamesKeyed = { ...allScopeNamesKeyed, ...scopesKeyed }
+    allScopeDataByName = { ...allScopeDataByName, ...scopeDataByName }
   })
 
   // Get remaining scopes directly from themes
@@ -291,12 +301,14 @@ const step2 = async () => {
   //     }
 
   //     allScopes.forEach(scope => {
-  //       allScopeNamesKeyed[scope] = true
+  //       allScopeDataByName[scope] = true
   //     })
   //   })
   // })
 
-  const allScopeNames = Object.keys(allScopeNamesKeyed)
+  const allScopeData = Object.entries(allScopeDataByName).map(
+    ([scopeName, { originalScopeStack }]) => ({ scopeName, originalScopeStack }),
+  )
 
   const db = new sqlite3.Database("./data.db", err => {
     if (err) throw err
@@ -313,17 +325,27 @@ const step2 = async () => {
 
   const themeNamesFormatted = allThemeNames.map(themeName => `('${themeName}')`).join(", ")
 
+  await query(`DELETE FROM themes`)
+  await query(`DELETE FROM scopes`)
+  await query(`DELETE FROM colors`)
+
   await query(`INSERT INTO themes (name) VALUES ${themeNamesFormatted}`)
 
   const themes = await query(`SELECT id, name FROM themes`)
 
-  for (scopeName of allScopeNames) {
+  for ({ scopeName, originalScopeStack } of allScopeData) {
     const themeColors = themes.map(theme => {
       const color = scopeNameToColor({ scopeName, themeName: theme.name })
       return [theme.id, color]
     })
 
-    await query(`INSERT INTO scopes (name) VALUES ('${scopeName}')`)
+    const originalScopeStackFormatted =
+      originalScopeStack == null ? null : `'${originalScopeStack}'`
+
+    await query(`
+      INSERT INTO scopes (name, original_scope_stack) 
+      VALUES ('${scopeName}', ${originalScopeStackFormatted})
+    `)
 
     const [scope] = await query(`SELECT * FROM scopes WHERE name = '${scopeName}'`)
 
