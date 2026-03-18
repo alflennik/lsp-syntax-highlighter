@@ -9,7 +9,10 @@ const Converter = scopesByRank => {
   return convertGrammarScopeToDatabaseScope
 }
 
-const convertGrammarScopeToDatabaseScope = grammarScopeStack => {
+const convertGrammarScopeToDatabaseScope = (
+  grammarScopeStack,
+  { diagnosticReturnAllMatches = false } = {},
+) => {
   let i = 0
   let rank = maximumRank
   let iterationCount = 0
@@ -26,11 +29,17 @@ const convertGrammarScopeToDatabaseScope = grammarScopeStack => {
     }
 
     const databaseScopeStack = databaseScopesByRank[rank][i]
-    if (!grammarScopeStack || !databaseScopeStack) {
-      // debugger
-    }
+    // if (databaseScopeStack === "source.css") {
+    //   debugger
+    // }
     const isMatch = matchScopeStacks(grammarScopeStack, databaseScopeStack.split(" "))
-    if (isMatch) return databaseScopeStack
+    if (isMatch) {
+      if (!diagnosticReturnAllMatches) {
+        return databaseScopeStack
+      } else {
+        console.log(databaseScopeStack, rank)
+      }
+    }
 
     i += 1
     if (i === databaseScopesByRank[rank].length) {
@@ -59,7 +68,7 @@ const matchScopeStacks = (grammarScopeStack, databaseScopeStack) => {
       j += 1
     }
 
-    if (i === databaseScopeStack.length && j === grammarScopeStack.length) return true
+    if (i === databaseScopeStack.length) return true
 
     if (i === databaseScopeStack.length || j === grammarScopeStack.length) return false
   }

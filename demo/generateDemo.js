@@ -170,7 +170,7 @@ const generateDemo = async () => {
 
       results[languageName][themeName].semantic = tokens2
       const duration2 = performance.now() - start2
-      console.log("textmate", duration1, "semantic", duration2)
+      console.log("textmate", duration1.toFixed(3), "semantic", duration2.toFixed(3))
     })
   })
 

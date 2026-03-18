@@ -9,19 +9,34 @@ const step4 = async () => {
   const versionNumber = currentMajorVersion + 1
 
   const scopes = await query(`
-    SELECT s1.*, s2.name AS cluster_scope_name
-    FROM scopes s1
-    INNER JOIN scopes s2 ON s1.cluster_scope_id = s2.id
+    SELECT 
+      scopes.id AS id,
+      scopes.name AS name,
+      scope_stacks.content AS original_scope_stack,
+      scopes2.name AS cluster_scope_name
+    FROM scope_stacks
+    INNER JOIN scopes ON scopes.id = scope_stacks.scope_id
+    INNER JOIN scopes scopes2 ON scopes.cluster_scope_id = scopes2.id
   `)
+  // const scopes = await query(`
+  //   SELECT s1.*, s2.name AS cluster_scope_name
+  //   FROM scopes s1
+  //   INNER JOIN scopes s2 ON s1.cluster_scope_id = s2.id
+  // `)
 
   const primaryScopeNames = []
-  const originalScopeStackByScopeName = {}
+  const originalScopeStacksByScopeName = {}
 
   scopes.forEach(({ name, original_scope_stack, cluster_scope_name }) => {
     if (cluster_scope_name !== name) return
 
-    primaryScopeNames.push(name)
-    originalScopeStackByScopeName[name] = original_scope_stack
+    if (!primaryScopeNames.includes(name)) primaryScopeNames.push(name)
+
+    if (!originalScopeStacksByScopeName[name]) {
+      originalScopeStacksByScopeName[name] = []
+    }
+
+    originalScopeStacksByScopeName[name].push(original_scope_stack)
   })
 
   let ranksByPrimaryScopeName = Object.fromEntries(
@@ -42,10 +57,22 @@ const step4 = async () => {
     const convertGrammarScopeToDatabaseScope = Converter(scopesByRank)
 
     primaryScopeNames.forEach(scopeName => {
-      const originalScopeStack = originalScopeStackByScopeName[scopeName]
-      if (!originalScopeStack) return
-      const matchedScope = convertGrammarScopeToDatabaseScope(originalScopeStack.split(" "))
-      if (matchedScope !== scopeName) ranksByPrimaryScopeName[scopeName] += 1
+      const originalScopeStacks = originalScopeStacksByScopeName[scopeName]
+      if (!originalScopeStacks) return
+      for (const originalScopeStack of originalScopeStacks) {
+        if (
+          originalScopeStack ===
+          // "source.css meta.selector.css entity.other.attribute-name.class.css"
+          "source.css"
+        ) {
+          console.log("rank", ranksByPrimaryScopeName[scopeName])
+        }
+        const matchedScope = convertGrammarScopeToDatabaseScope(originalScopeStack.split(" "))
+        if (matchedScope !== scopeName) {
+          ranksByPrimaryScopeName[scopeName] += 1
+          break
+        }
+      }
     })
 
     console.log("Pass", i + 1, "of", maximumRank, "complete")
