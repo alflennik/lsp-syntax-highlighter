@@ -252,11 +252,17 @@ const step2 = async () => {
         .map(nested => nested.join("."))
         .join(" ")
 
-      if (!scopeDataByName[simplified]) {
-        scopeDataByName[simplified] = { originalScopeStacks: [scopeName] }
-      } else {
-        scopeDataByName[simplified].originalScopeStacks.push(scopeName)
-      }
+      if (
+        !scopeDataByName[simplified] ||
+        // The shortest scope stack associated with the simplified scope usually gets better ranking
+        // results in step 4
+        scopeDataByName[simplified].originalScopeStack.length > scopeName
+      )
+        scopeDataByName[simplified] = {
+          // Technically multiple scope stacks will produce the same simplified scope, but for now I
+          // will see if only persisting one still produces good results
+          originalScopeStack: scopeName,
+        }
     })
 
     console.info(Object.keys(scopeDataByName).length, "final scopes found")
@@ -301,7 +307,7 @@ const step2 = async () => {
   // })
 
   const allScopeData = Object.entries(allScopeDataByName).map(
-    ([scopeName, { originalScopeStacks }]) => ({ scopeName, originalScopeStacks }),
+    ([scopeName, { originalScopeStack }]) => ({ scopeName, originalScopeStack }),
   )
 
   const db = new sqlite3.Database("./data.db", err => {
@@ -322,19 +328,24 @@ const step2 = async () => {
   await query(`DELETE FROM themes`)
   await query(`DELETE FROM scopes`)
   await query(`DELETE FROM colors`)
-  await query(`DELETE FROM scope_stacks`)
 
   await query(`INSERT INTO themes (name) VALUES ${themeNamesFormatted}`)
 
   const themes = await query(`SELECT id, name FROM themes`)
 
-  for ({ scopeName, originalScopeStacks } of allScopeData) {
+  for ({ scopeName, originalScopeStack } of allScopeData) {
     const themeColors = themes.map(theme => {
       const color = scopeNameToColor({ scopeName, themeName: theme.name })
       return [theme.id, color]
     })
 
-    await query(`INSERT INTO scopes (name) VALUES ('${scopeName}')`)
+    const originalScopeStackFormatted =
+      originalScopeStack == null ? null : `'${originalScopeStack}'`
+
+    await query(`
+      INSERT INTO scopes (name, original_scope_stack) 
+      VALUES ('${scopeName}', ${originalScopeStackFormatted})
+    `)
 
     const [scope] = await query(`SELECT * FROM scopes WHERE name = '${scopeName}'`)
 
@@ -343,16 +354,6 @@ const step2 = async () => {
       .join(", ")
 
     await query(`INSERT INTO colors (theme_id, scope_id, color) VALUES ${themeColorsFormatted}`)
-
-    if (originalScopeStacks) {
-      const originalScopeStacksFormatted = originalScopeStacks
-        .map(stack => `('${stack}', ${scope.id})`)
-        .join(",")
-
-      await query(`
-        INSERT INTO scope_stacks (content, scope_id) VALUES ${originalScopeStacksFormatted}
-      `)
-    }
   }
 
   await new Promise(resolve => {

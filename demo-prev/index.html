@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Demo</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: #1b1b1f;
+        color: #d3d9f7;
+        font-family: system-ui;
+      }
+      .demo-warning-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100dvh;
+      }
+      .demo-warning {
+        font-size: 19px;
+        background: #202025;
+        display: inline-block;
+        padding: 10px 34px;
+        border-radius: 2em;
+        line-height: 2em;
+        color: #cae1dd;
+
+        code {
+          color: #dcd195;
+          margin-left: 4px;
+        }
+      }
+      .label-container {
+        padding: 14px 30px 14px 14px;
+        display: flex;
+        gap: 20px;
+        align-items: center;
+
+        select {
+          margin-right: 30px;
+        }
+      }
+      .label-note {
+        width: 100%;
+        text-align: right;
+        color: #e4e4c0;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: end;
+
+        svg {
+          width: 25px;
+          height: 25px;
+          fill: #dfdf98;
+          margin-right: 8px;
+        }
+      }
+      .highlighting-container {
+        position: relative;
+
+        .highlighting-textmate * {
+          outline: none;
+        }
+
+        > * {
+          position: absolute;
+          inset: 0;
+        }
+
+        pre {
+          padding: 30px;
+        }
+      }
+      .highlighting-label {
+        background: #202025;
+        color: #cae1dd;
+        line-height: 1.5em;
+        border-radius: 1.5em;
+        padding: 10px 20px;
+        position: fixed;
+        top: 80px;
+        right: 25px;
+        display: inline-block;
+      }
+      .highlighting-textmate, .highlighting-semantic {
+        padding: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      const load = async () => {
+        let results
+        let backgroundColors
+        // let languageAliasToName
+        // let samples
+        try {
+          const resultsResponse = await fetch("results.json")
+          ;({ results, backgroundColors } = await resultsResponse.json())
+
+          // const samplesResponse = await fetch('samples.json')
+          // ;[languageAliasToName, samples] = await samplesResponse.json()
+        } catch (error) {
+          document.body.insertAdjacentHTML(
+            "afterbegin",
+            `
+            <div class="demo-warning-container">
+              <div class="demo-warning">
+                From the demo folder, please run <code>\`node generateDemo.js\`</code> and refresh.
+              </div>
+            </div>
+          `,
+          )
+          return
+        }
+
+        const allLanguageNames = Object.keys(results)
+        const allThemeNames = Object.keys(backgroundColors)
+
+        const urlParams = /theme=(.+)&language=(.+)/.exec(location.hash)
+
+        const defaultThemeName = urlParams?.[1] || "one-dark-pro"
+        const defaultLanguageName = urlParams?.[2] || "javascript"
+
+        document.body.insertAdjacentHTML(
+          "afterbegin",
+          `
+          <div class="label-container">
+            <label for="theme">Theme</label>
+            <select id="theme">
+              ${allThemeNames.map(
+                themeName =>
+                  `<option 
+                    ${themeName === defaultThemeName ? 'selected="true"' : ""}
+                    value="${themeName}"
+                  >
+                    ${themeName}
+                  </option>`,
+              )}
+            </select>
+            <label for="language">Language</label>
+            <select id="language">
+              ${allLanguageNames.map(
+                languageName =>
+                  `<option 
+                    ${languageName === defaultLanguageName ? 'selected="true"' : ""}
+                    value="${languageName}"
+                  >
+                    ${languageName}
+                  </option>`,
+              )}
+            </select>
+            <div class="label-note">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M320 576C461.4 576 576 461.4 576 320C576 178.6 461.4 64 320 64C178.6 64 64 178.6 64 320C64 461.4 178.6 576 320 576zM288 224C288 206.3 302.3 192 320 192C337.7 192 352 206.3 352 224C352 241.7 337.7 256 320 256C302.3 256 288 241.7 288 224zM280 288L328 288C341.3 288 352 298.7 352 312L352 400L360 400C373.3 400 384 410.7 384 424C384 437.3 373.3 448 360 448L280 448C266.7 448 256 437.3 256 424C256 410.7 266.7 400 280 400L304 400L304 336L280 336C266.7 336 256 325.3 256 312C256 298.7 266.7 288 280 288z"/></svg>
+              Hold Shift to Preview
+            </div>
+          </div>
+          <div class="highlighting-container">
+            <div class="highlighting-textmate-container">
+              <div class="highlighting-label">Textmate</div>
+              <div class="highlighting-textmate"></div>
+            </div>
+            <div class="highlighting-semantic-container">
+              <div class="highlighting-label">Semantic Tokens</div>
+              <div class="highlighting-semantic"></div>
+            </div>
+          </div>
+        `,
+        )
+
+        // const highlighter = await createHighlighter({
+        //   themes: [...allThemeNames, ...Object.values(semanticThemes)],
+        //   langs: allLanguageNames
+        // })
+
+        let themeName = defaultThemeName
+        let languageName = defaultLanguageName
+
+        const getText = result => {
+          return result
+            .map(lineTokens =>
+              lineTokens
+                .map(
+                  token =>
+                    `<span style="color: ${token.color}; font-style: ${token.fontStyle};">${token.content
+                      .replace(/ /g, "&nbsp;")
+                      .replace(/\t/g, "&nbsp;&nbsp;")}</span>`,
+                )
+                .join(""),
+            )
+            .join("<br />")
+        }
+
+        const refreshHighlighting = async () => {
+          // let sample = samples[languageAliasToName[languageName]]
+          let result = results[languageName][themeName]
+
+          const highlightingTextmate = document.querySelector(".highlighting-textmate")
+
+          highlightingTextmate.innerHTML = getText(result.textmate)
+          highlightingTextmate.style.backgroundColor = backgroundColors[themeName]
+
+          const highlightingSemantic = document.querySelector(".highlighting-semantic")
+          highlightingSemantic.innerHTML = getText(result.semantic)
+          highlightingSemantic.style.backgroundColor = backgroundColors[themeName]
+
+          location.hash = `theme=${themeName}&language=${languageName}`
+        }
+
+        refreshHighlighting()
+
+        document.querySelector("#theme").addEventListener("change", event => {
+          themeName = event.target.value
+          refreshHighlighting()
+        })
+
+        document.querySelector("#language").addEventListener("change", event => {
+          languageName = event.target.value
+          refreshHighlighting()
+        })
+
+        const refreshDropdowns = () => {
+          document.querySelector(`#theme [value="${themeName}"]`).selected = true
+          document.querySelector(`#language [value="${languageName}"]`).selected = true
+        }
+
+        document.addEventListener("keydown", event => {
+          if (event.key === "Shift") {
+            document.querySelector(".highlighting-textmate-container").style.opacity = 0
+            document.querySelector(".highlighting-semantic-container").style.opacity = 1
+            document.querySelector(".highlighting-semantic-container").style.pointerEvents = "auto"
+          }
+          if (event.shiftKey && event.key === "ArrowRight") {
+            event.preventDefault()
+            const languageNameIndex = allLanguageNames.findIndex(each => each === languageName)
+            if (allLanguageNames[languageNameIndex + 1]) {
+              languageName = allLanguageNames[languageNameIndex + 1]
+            } else {
+              languageName = allLanguageNames[0]
+            }
+            refreshDropdowns()
+            refreshHighlighting()
+          }
+          if (event.shiftKey && event.key === "ArrowLeft") {
+            event.preventDefault()
+            const languageNameIndex = allLanguageNames.findIndex(each => each === languageName)
+            if (allLanguageNames[languageNameIndex - 1]) {
+              languageName = allLanguageNames[languageNameIndex - 1]
+            } else {
+              languageName = allLanguageNames.at(-1)
+            }
+            refreshDropdowns()
+            refreshHighlighting()
+          }
+          if (event.shiftKey && event.key === "ArrowDown") {
+            event.preventDefault()
+            const themeNameIndex = allThemeNames.findIndex(each => each === themeName)
+            if (allThemeNames[themeNameIndex + 1]) {
+              themeName = allThemeNames[themeNameIndex + 1]
+            } else {
+              themeName = allThemeNames[0]
+            }
+            refreshDropdowns()
+            refreshHighlighting()
+          }
+          if (event.shiftKey && event.key === "ArrowUp") {
+            event.preventDefault()
+            const themeNameIndex = allThemeNames.findIndex(each => each === themeName)
+            if (allThemeNames[themeNameIndex - 1]) {
+              themeName = allThemeNames[themeNameIndex - 1]
+            } else {
+              themeName = allThemeNames.at(-1)
+            }
+            refreshDropdowns()
+            refreshHighlighting()
+          }
+        })
+
+        document.addEventListener("keyup", event => {
+          if (event.key === "Shift") {
+            document.querySelector(".highlighting-textmate-container").style.opacity = 1
+            document.querySelector(".highlighting-semantic-container").style.opacity = 0
+            document.querySelector(".highlighting-semantic-container").style.pointerEvents = "none"
+          }
+        })
+
+        document.querySelector(".highlighting-semantic-container").style.pointerEvents = "none"
+        document.querySelector(".highlighting-semantic-container").style.opacity = 0
+      }
+
+      load()
+    </script>
+  </body>
+</html>
