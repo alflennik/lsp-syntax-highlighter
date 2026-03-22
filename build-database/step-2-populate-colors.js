@@ -1,4 +1,4 @@
-const { createScopeNameToColor, walkObjects } = require("./utilities")
+const { createScopeNameToColor } = require("./utilities")
 const sqlite3 = require("sqlite3").verbose()
 
 const step2 = async () => {
@@ -25,9 +25,11 @@ const step2 = async () => {
   )
 
   const allScopesInThemes = {}
+
   const cleanScope = scope => {
     return scope.replace(/[ ,>*|]/g, "")
   }
+
   Object.values(allThemes).forEach(theme => {
     theme.tokenColors.forEach(tokenColorSet => {
       if (tokenColorSet.scope) {
@@ -42,19 +44,21 @@ const step2 = async () => {
           tokenColorSet.scope.split(",").forEach(scope => {
             scope.split(" ").forEach(scope => {
               if (scope.match(/[ ,>*|]/ || scope.match(/^[.\-]/))) return
-              allScopesInThemes[cleanScope(scope)]
+              allScopesInThemes[cleanScope(scope)] = true
             })
           })
         } else {
           tokenColorSet.scope.split(" ").forEach(scope => {
             if (scope.match(/[ ,>*|]/ || scope.match(/^[.\-]/))) return
-            allScopesInThemes[cleanScope(scope)]
+            allScopesInThemes[cleanScope(scope)] = true
           })
         }
       }
     })
   })
+
   const scopeUsedInThemes = scope => {
+    scope = scope.split(" ").at(-1) // For themes that output two scopes in one, check the last one
     if (allScopesInThemes[scope]) return true
     const segments = scope.split(".")
     let iterationCount = 0
@@ -78,27 +82,28 @@ const step2 = async () => {
     css: { maxDepth: 5, maxRecursion: 2 },
     json: { maxDepth: 10, maxRecursion: 10 },
     javascript: { maxDepth: 6, maxRecursion: 1, allowPotentialDeadEnds: false },
+    // javascript: { maxDepth: 2, maxRecursion: 1 },
     python: { maxDepth: 7, maxRecursion: 1 },
   }
 
   const grammars = [
-    allGrammars["text.html.basic"],
+    // allGrammars["text.html.basic"],
     allGrammars["source.js"],
-    allGrammars["source.css"],
-    allGrammars["source.json"],
-    allGrammars["source.python"],
+    // allGrammars["source.css"],
+    // allGrammars["source.json"],
+    // allGrammars["source.python"],
   ]
 
-  let allScopeDataByName = {
-    default: {}, // Default is not a real scope so it shows the color when the scope is unknown
+  let allPossibleScopesKeyed = {
+    default: true, // Default is not a real scope so it shows the color when the scope is unknown
   }
 
   grammars.forEach(grammar => {
     console.info("starting", grammar.name)
-    let scopesKeyed = {}
+    let grammarPossibleScopesKeyed = {}
 
     let iterationCount = 0
-    const maxIterationCount = 10_000_000
+    const maxIterationCount = 30_000_000
 
     const {
       maxDepth,
@@ -114,18 +119,19 @@ const step2 = async () => {
     context.depthOfRecursion.$self = 0
 
     const handlePattern = (pattern, contextUncloned) => {
-      if (!allowPotentialDeadEnds && pattern.name && !scopeUsedInThemes(pattern.name)) {
-        // console.log("no", pattern.name)
-        return
-      } else if (pattern.name) {
-        // console.log("yes", pattern.name)
-      }
-
       if (!pattern) {
         throw new Error("unexpected")
       }
 
       const context = structuredClone(contextUncloned) // Avoid issues with reference types
+
+      if (!allowPotentialDeadEnds && pattern.name && !scopeUsedInThemes(pattern.name)) {
+        if (!context.potentialDeadEndBranch) {
+          context.potentialDeadEndBranch = true // Only exit after two useless scopes
+        } else {
+          return
+        }
+      }
 
       if (context.scopeString.split(" ").length + 1 > maxDepth) {
         return
@@ -169,7 +175,7 @@ const step2 = async () => {
       context.scopeString = `${context.scopeString}${nameFormatted}`
 
       if (nameFormatted) {
-        scopesKeyed[context.scopeString] = true
+        grammarPossibleScopesKeyed[context.scopeString] = true
       }
 
       Object.values(pattern.beginCaptures ?? {}).map(beginCapture => {
@@ -189,86 +195,96 @@ const step2 = async () => {
       Object.values(pattern.endCaptures ?? {}).map(endCapture => {
         handlePattern(endCapture, context)
       })
+
+      // "contentName" is similar to "name" but does not wrap the beginCapture / endCapture etc.
+      if (pattern.contentName) {
+        grammarPossibleScopesKeyed[`${context.scopeString} ${pattern.contentName}`] = true
+      }
     }
 
     grammar.patterns.forEach(pattern => {
       handlePattern(pattern, context)
     })
 
-    // Now eliminate useless scopes
+    console.info(grammar.name, Object.keys(grammarPossibleScopesKeyed).length, "scopes found")
 
-    let scopes = Object.keys(scopesKeyed)
-
-    console.info(scopes.length, "scopes found")
-
-    scopeDataByName = {}
-
-    scopes.forEach((scopeName, index) => {
-      if (index !== 0 && index % 500 === 0) {
-        console.info(index, "scopes tested")
-      }
-
-      const colorsByTheme = Object.fromEntries(
-        allThemeNames.map(themeName => {
-          const color = scopeNameToColor({ scopeName, themeName })
-          return [themeName, color]
-        }),
-      )
-
-      const splitScopes = scopeName.split(" ").map(nested => nested.split("."))
-
-      for (let i = splitScopes.length - 1; i >= 0; i -= 1) {
-        for (let j = splitScopes[i].length - 1; j >= 0; j -= 1) {
-          const removed = splitScopes[i].pop()
-
-          const comparison = splitScopes
-            .filter(nested => nested.length !== 0)
-            .map(nested => nested.join("."))
-            .join(" ")
-
-          const comparisonColors = allThemeNames.map(themeName => {
-            const color = scopeNameToColor({ scopeName: comparison, themeName })
-            return [themeName, color]
-          })
-
-          let score = 0
-          let total = allThemeNames.length
-
-          comparisonColors.forEach(([themeName, color]) => {
-            if (color === colorsByTheme[themeName]) {
-              score += 1
-            }
-          })
-
-          if (score !== total) {
-            splitScopes[i].push(removed)
-            break
-          }
-        }
-      }
-
-      const simplified = splitScopes
-        .filter(nested => nested.length !== 0)
-        .map(nested => nested.join("."))
-        .join(" ")
-
-      if (
-        !scopeDataByName[simplified] ||
-        // The shortest scope stack associated with the simplified scope usually gets better ranking
-        // results in step 4
-        scopeDataByName[simplified].originalScopeStack.length > scopeName
-      )
-        scopeDataByName[simplified] = {
-          // Technically multiple scope stacks will produce the same simplified scope, but for now I
-          // will see if only persisting one still produces good results
-          originalScopeStack: scopeName,
-        }
-    })
-
-    console.info(Object.keys(scopeDataByName).length, "final scopes found")
-
-    allScopeDataByName = { ...allScopeDataByName, ...scopeDataByName }
+    allPossibleScopesKeyed = { ...allPossibleScopesKeyed, ...grammarPossibleScopesKeyed }
   })
+
+  // Now eliminate useless scopes
+
+  meaningfulScopesKeyed = {}
+
+  Object.keys(allPossibleScopesKeyed).forEach((scopeName, index) => {
+    if (index !== 0 && index % 500 === 0) {
+      console.info(index, "scopes tested")
+    }
+
+    const colorsByTheme = Object.fromEntries(
+      allThemeNames.map(themeName => {
+        const color = scopeNameToColor({ scopeName, themeName })
+        return [themeName, color]
+      }),
+    )
+
+    const splitScopes = scopeName.split(" ").map(nested => nested.split("."))
+
+    for (let i = splitScopes.length - 1; i >= 0; i -= 1) {
+      if (i === 0) break // keep the source.js part to make sure different languages don't clash
+
+      for (let j = splitScopes[i].length - 1; j >= 0; j -= 1) {
+        const removed = splitScopes[i].pop()
+
+        const comparison = splitScopes
+          .filter(nested => nested.length !== 0)
+          .map(nested => nested.join("."))
+          .join(" ")
+
+        const comparisonColors = allThemeNames.map(themeName => {
+          const color = scopeNameToColor({ scopeName: comparison, themeName })
+          return [themeName, color]
+        })
+
+        let score = 0
+        let total = allThemeNames.length
+
+        comparisonColors.forEach(([themeName, color]) => {
+          if (color === colorsByTheme[themeName]) {
+            score += 1
+          }
+        })
+
+        if (score !== total) {
+          splitScopes[i].push(removed)
+          break
+        }
+      }
+    }
+
+    const simplified = splitScopes
+      .filter(nested => nested.length !== 0)
+      .map(nested => nested.join("."))
+      .join(" ")
+
+    meaningfulScopesKeyed[simplified] = true
+    // if (
+    //   !meaningfulScopesKeyed[simplified] // ||
+    // The shortest scope stack associated with the simplified scope usually gets better ranking
+    // results in step 4
+    // scopeDataByName[simplified].originalScopeStack.length > scopeName
+    // ) {
+    // meaningfulScopesKeyed[simplified] = true
+    // scopeDataByName[simplified] = {
+    // Technically multiple scope stacks will produce the same simplified scope, but for now I
+    // will see if only persisting one still produces good results
+    //   originalScopeStack: scopeName,
+    // }
+    // }
+  })
+
+  console.info(Object.keys(meaningfulScopesKeyed).length, "final scopes found")
+
+  // allScopeDataByName = { ...allScopeDataByName, ...scopeDataByName }
 
   // Get remaining scopes directly from themes
   // Object.values(allThemes).forEach(theme => {
@@ -306,9 +322,15 @@ const step2 = async () => {
   //   })
   // })
 
-  const allScopeData = Object.entries(allScopeDataByName).map(
-    ([scopeName, { originalScopeStack }]) => ({ scopeName, originalScopeStack }),
-  )
+  // const allScopeData = Object.entries(allScopeDataByName).map(
+  //   ([scopeName, { originalScopeStack }]) => ({ scopeName, originalScopeStack }),
+  // )
+
+  // console.info(Object.keys(allScopeDataByName).length, "total scopes found")
+
+  const allScopeData = Object.keys(meaningfulScopesKeyed).map(scopeName => ({ scopeName }))
+
+  console.info("Writing all data to database")
 
   const db = new sqlite3.Database("./data.db", err => {
     if (err) throw err
@@ -333,19 +355,20 @@ const step2 = async () => {
 
   const themes = await query(`SELECT id, name FROM themes`)
 
-  for ({ scopeName, originalScopeStack } of allScopeData) {
+  for ({ scopeName /* , originalScopeStack */ } of allScopeData) {
     const themeColors = themes.map(theme => {
       const color = scopeNameToColor({ scopeName, themeName: theme.name })
       return [theme.id, color]
     })
 
-    const originalScopeStackFormatted =
-      originalScopeStack == null ? null : `'${originalScopeStack}'`
+    // const originalScopeStackFormatted =
+    //   originalScopeStack == null ? null : `'${originalScopeStack}'`
 
-    await query(`
-      INSERT INTO scopes (name, original_scope_stack) 
-      VALUES ('${scopeName}', ${originalScopeStackFormatted})
-    `)
+    // await query(`
+    //   INSERT INTO scopes (name, original_scope_stack)
+    //   VALUES ('${scopeName}', ${originalScopeStackFormatted})
+    // `)
+    await query(`INSERT INTO scopes (name) VALUES ('${scopeName}')`)
 
     const [scope] = await query(`SELECT * FROM scopes WHERE name = '${scopeName}'`)
 

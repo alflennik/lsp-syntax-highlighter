@@ -15,20 +15,20 @@ const step4 = async () => {
   `)
 
   const primaryScopeNames = []
-  const originalScopeStackByScopeName = {}
+  // const originalScopeStackByScopeName = {}
 
-  scopes.forEach(({ name, original_scope_stack, cluster_scope_name }) => {
+  scopes.forEach(({ name /* , original_scope_stack */, cluster_scope_name }) => {
     if (cluster_scope_name !== name) return
 
     primaryScopeNames.push(name)
-    originalScopeStackByScopeName[name] = original_scope_stack
+    // originalScopeStackByScopeName[name] = original_scope_stack
   })
 
   let ranksByPrimaryScopeName = Object.fromEntries(
     primaryScopeNames.map(scopeName => [scopeName, 0]),
   )
 
-  let maximumRank = 10
+  let maximumRank = 8
 
   for (let i = 0; i < maximumRank; i += 1) {
     const scopesByRank = {}
@@ -41,14 +41,17 @@ const step4 = async () => {
 
     const convertGrammarScopeToDatabaseScope = Converter(scopesByRank)
 
-    primaryScopeNames.forEach(scopeName => {
-      const originalScopeStack = originalScopeStackByScopeName[scopeName]
-      if (!originalScopeStack) return
-      const matchedScope = convertGrammarScopeToDatabaseScope(originalScopeStack.split(" "))
+    console.log("Pass", i + 1, "of", maximumRank)
+    primaryScopeNames.forEach((scopeName, index) => {
+      if (index % 1000 === 0) console.info("ranking", index, "of", primaryScopeNames.length)
+
+      // const originalScopeStack = originalScopeStackByScopeName[scopeName]
+      // if (!originalScopeStack) return
+      // const matchedScope = convertGrammarScopeToDatabaseScope(originalScopeStack.split(" "))
+      // if (matchedScope !== scopeName) ranksByPrimaryScopeName[scopeName] += 1
+      const matchedScope = convertGrammarScopeToDatabaseScope(scopeName.split(" "))
       if (matchedScope !== scopeName) ranksByPrimaryScopeName[scopeName] += 1
     })
-
-    console.log("Pass", i + 1, "of", maximumRank, "complete")
   }
 
   const primaryScopeToScopes = {}

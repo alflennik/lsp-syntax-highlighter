@@ -12,6 +12,14 @@ Object.entries(database.primary).forEach(([scope, { rank }]) => {
 const convertGrammarScopeToDatabaseScope = Converter(scopesByRank)
 
 convertGrammarScopeToDatabaseScope(
-  ["source.css", "meta.selector.css", "entity.other.attribute-name.class.css"],
+  // prettier-ignore
+  [
+    'source.js',
+    'meta.var.expr.js',
+    'meta.objectliteral.js',
+    'meta.object.member.js',
+    'meta.object-literal.key.js',
+    'punctuation.separator.key-value.js',
+  ],
   { diagnosticReturnAllMatches: true },
 )
