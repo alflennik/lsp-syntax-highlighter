@@ -11,7 +11,6 @@ const generateDemo = async () => {
     bundledThemes,
   } = await import("shiki")
 
-  // TEMP (I hope)
   const bundledLanguages = Object.fromEntries(
     Object.entries(bundledLanguagesRaw).filter(([name]) => {
       // prettier-ignore
@@ -19,8 +18,13 @@ const generateDemo = async () => {
         "javascript",
         "json",
         "html",
+        "sql",
+        "markdown",
+        "graphql",
         "css",
-        "python",
+
+        // "typescript",
+        // "python",
       ].includes(name)
     }),
   )
@@ -130,14 +134,17 @@ const generateDemo = async () => {
 
       let currentLine = []
       let currentLineIndex = 0
-      let currentOffset = 0
 
-      semanticTokens.forEach(({ columnIndex, length, semanticToken }) => {
-        const content = code.slice(currentOffset, currentOffset + length)
-        currentOffset += length
-        if (themeName === "catppuccin-macchiato" && content.includes('"')) {
-          // debugger
+      const lines = code.split("\n")
+
+      semanticTokens.forEach(({ lineIndex, columnIndex, length, semanticToken }) => {
+        if (currentLineIndex < lineIndex) {
+          currentLineIndex += 1
+          tokens2.push(currentLine)
+          currentLine = []
         }
+
+        const content = lines[lineIndex].slice(columnIndex, columnIndex + length)
 
         const { color, fontStyle } = (() => {
           const scopeName = databaseFlipped[semanticToken]
@@ -146,24 +153,7 @@ const generateDemo = async () => {
           return { color: colorSettings.color, fontStyle: getFontStyle(colorSettings.fontStyle) }
         })()
 
-        if (content === "\n") {
-          tokens2.push([])
-        } else {
-          currentLine.push({ content, columnIndex, color, fontStyle })
-        }
-
-        // let iterationCount = 0
-        // let maxIterationCount = 100
-        // while (true) {
-        // iterationCount += 1
-        // if (iterationCount > maxIterationCount) throw new Error("Max iteration count exceeded")
-        // if (code[currentOffset] !== "\n") break
-        if (code[currentOffset] !== "\n" || content === "\n") return
-        currentOffset += 1
-        currentLineIndex += 1
-        tokens2.push(currentLine)
-        currentLine = []
-        // }
+        currentLine.push({ content, columnIndex, color, fontStyle })
       })
 
       tokens2.push(currentLine)

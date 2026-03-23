@@ -77,25 +77,35 @@ const step2 = async () => {
   const allThemeNames = Object.keys(bundledThemes)
 
   const grammarCustomization = {
-    default: { maxDepth: 4, maxRecursion: 1 },
+    // javascript: { maxDepth: 2, maxRecursion: 1 }, // For quick testing
+
+    default: { maxDepth: 4, maxRecursion: 1, allowPotentialDeadEnds: true },
     html: { maxDepth: 7, maxRecursion: 4 },
     css: { maxDepth: 5, maxRecursion: 2 },
     json: { maxDepth: 10, maxRecursion: 10 },
     javascript: { maxDepth: 6, maxRecursion: 1, allowPotentialDeadEnds: false },
-    // javascript: { maxDepth: 2, maxRecursion: 1 },
+    sql: { maxDepth: 10, maxRecursion: 10 },
+    markdown: { maxDepth: 7, maxRecursion: 2 },
+    graphql: { maxDepth: 8, maxRecursion: 3 },
+    typescript: { maxDepth: 6, maxRecursion: 1, allowPotentialDeadEnds: false },
     python: { maxDepth: 7, maxRecursion: 1 },
   }
 
   const grammars = [
-    // allGrammars["text.html.basic"],
-    allGrammars["source.js"],
-    // allGrammars["source.css"],
-    // allGrammars["source.json"],
+    // allGrammars["source.ts"],
     // allGrammars["source.python"],
+    allGrammars["text.html.markdown"],
+
+    allGrammars["text.html.basic"],
+    allGrammars["source.js"],
+    allGrammars["source.sql"],
+    allGrammars["source.graphql"],
+    allGrammars["source.css"],
+    allGrammars["source.json"],
   ]
 
   let allPossibleScopesKeyed = {
-    default: true, // Default is not a real scope so it shows the color when the scope is unknown
+    default: {}, // Default is not a real scope so it shows the color when the scope is unknown
   }
 
   grammars.forEach(grammar => {
@@ -106,10 +116,10 @@ const step2 = async () => {
     const maxIterationCount = 30_000_000
 
     const {
-      maxDepth,
-      maxRecursion,
-      allowPotentialDeadEnds = true,
-    } = grammarCustomization[grammar.name] ?? grammarCustomization.default
+      maxDepth = grammarCustomization.default.maxDepth,
+      maxRecursion = grammarCustomization.default.maxRecursion,
+      allowPotentialDeadEnds = grammarCustomization.default.allowPotentialDeadEnds,
+    } = grammarCustomization[grammar.name] ?? {}
 
     const context = {
       scopeString: `${grammar.scopeName}`,
@@ -211,13 +221,15 @@ const step2 = async () => {
     allPossibleScopesKeyed = { ...allPossibleScopesKeyed, ...grammarPossibleScopesKeyed }
   })
 
+  const totalScopeCount = Object.keys(allPossibleScopesKeyed).length
+
   // Now eliminate useless scopes
 
   meaningfulScopesKeyed = {}
 
   Object.keys(allPossibleScopesKeyed).forEach((scopeName, index) => {
     if (index !== 0 && index % 500 === 0) {
-      console.info(index, "scopes tested")
+      console.info(index, "of", totalScopeCount, "scopes tested")
     }
 
     const colorsByTheme = Object.fromEntries(
@@ -266,69 +278,25 @@ const step2 = async () => {
       .map(nested => nested.join("."))
       .join(" ")
 
-    meaningfulScopesKeyed[simplified] = true
-    // if (
-    //   !meaningfulScopesKeyed[simplified] // ||
-    // The shortest scope stack associated with the simplified scope usually gets better ranking
-    // results in step 4
-    // scopeDataByName[simplified].originalScopeStack.length > scopeName
-    // ) {
-    // meaningfulScopesKeyed[simplified] = true
-    // scopeDataByName[simplified] = {
-    // Technically multiple scope stacks will produce the same simplified scope, but for now I
-    // will see if only persisting one still produces good results
-    //   originalScopeStack: scopeName,
-    // }
-    // }
+    if (
+      !meaningfulScopesKeyed[simplified] ||
+      // The shortest scope stack associated with the simplified scope usually gets better ranking
+      // results in step 4
+      meaningfulScopesKeyed[simplified].originalScopeStack.length > scopeName
+    ) {
+      meaningfulScopesKeyed[simplified] = {
+        // Technically multiple scope stacks will produce the same simplified scope, but for now I
+        // will see if only persisting one still produces good results
+        originalScopeStack: scopeName,
+      }
+    }
   })
 
   console.info(Object.keys(meaningfulScopesKeyed).length, "final scopes found")
 
-  // allScopeDataByName = { ...allScopeDataByName, ...scopeDataByName }
-
-  // Get remaining scopes directly from themes
-  // Object.values(allThemes).forEach(theme => {
-  //   theme.tokenColors.forEach(tokenColorSet => {
-  //     if (!tokenColorSet?.settings?.foreground) {
-  //       // One feature Textmate Grammars support is "falling through" - basically it's possible to
-  //       // decouple the font style, background color and text color across different selectors.
-  //       // I haven't figured out a way to replicate this, so I decided to discard settings that omit
-  //       // a text color, basically it's better to get the color right than the font style
-  //       return
-  //     }
-
-  //     // ">" Not supported now, maybe later
-  //     if (Array.isArray(tokenColorSet.scope)) {
-  //       tokenColorSet.scope = tokenColorSet.scope?.filter(scope => !scope.includes(">"))
-  //       if (!tokenColorSet.scope?.length) return
-  //     } else if (tokenColorSet.scope?.includes(">")) {
-  //       return
-  //     }
-
-  //     const allScopes = []
-  //     if (tokenColorSet.scope) {
-  //       if (Array.isArray(tokenColorSet.scope)) {
-  //         allScopes.push(...tokenColorSet.scope)
-  //       } else if (tokenColorSet.scope.includes(",")) {
-  //         allScopes.push(...tokenColorSet.scope.split(",").map(scope => scope.trim()))
-  //       } else {
-  //         allScopes.push(tokenColorSet.scope)
-  //       }
-  //     }
-
-  //     allScopes.forEach(scope => {
-  //       allScopeDataByName[scope] = true
-  //     })
-  //   })
-  // })
-
-  // const allScopeData = Object.entries(allScopeDataByName).map(
-  //   ([scopeName, { originalScopeStack }]) => ({ scopeName, originalScopeStack }),
-  // )
-
-  // console.info(Object.keys(allScopeDataByName).length, "total scopes found")
-
-  const allScopeData = Object.keys(meaningfulScopesKeyed).map(scopeName => ({ scopeName }))
+  const allScopeData = Object.entries(meaningfulScopesKeyed).map(
+    ([scopeName, { originalScopeStack }]) => ({ scopeName, originalScopeStack }),
+  )
 
   console.info("Writing all data to database")
 
@@ -355,20 +323,19 @@ const step2 = async () => {
 
   const themes = await query(`SELECT id, name FROM themes`)
 
-  for ({ scopeName /* , originalScopeStack */ } of allScopeData) {
+  for ({ scopeName, originalScopeStack } of allScopeData) {
     const themeColors = themes.map(theme => {
       const color = scopeNameToColor({ scopeName, themeName: theme.name })
       return [theme.id, color]
     })
 
-    // const originalScopeStackFormatted =
-    //   originalScopeStack == null ? null : `'${originalScopeStack}'`
+    const originalScopeStackFormatted =
+      originalScopeStack == null ? null : `'${originalScopeStack}'`
 
-    // await query(`
-    //   INSERT INTO scopes (name, original_scope_stack)
-    //   VALUES ('${scopeName}', ${originalScopeStackFormatted})
-    // `)
-    await query(`INSERT INTO scopes (name) VALUES ('${scopeName}')`)
+    await query(`
+      INSERT INTO scopes (name, original_scope_stack)
+      VALUES ('${scopeName}', ${originalScopeStackFormatted})
+    `)
 
     const [scope] = await query(`SELECT * FROM scopes WHERE name = '${scopeName}'`)
 

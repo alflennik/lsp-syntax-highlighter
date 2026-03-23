@@ -15,13 +15,13 @@ const step4 = async () => {
   `)
 
   const primaryScopeNames = []
-  // const originalScopeStackByScopeName = {}
+  const originalScopeStackByScopeName = {}
 
-  scopes.forEach(({ name /* , original_scope_stack */, cluster_scope_name }) => {
+  scopes.forEach(({ name, original_scope_stack, cluster_scope_name }) => {
     if (cluster_scope_name !== name) return
 
     primaryScopeNames.push(name)
-    // originalScopeStackByScopeName[name] = original_scope_stack
+    originalScopeStackByScopeName[name] = original_scope_stack
   })
 
   let ranksByPrimaryScopeName = Object.fromEntries(
@@ -45,11 +45,9 @@ const step4 = async () => {
     primaryScopeNames.forEach((scopeName, index) => {
       if (index % 1000 === 0) console.info("ranking", index, "of", primaryScopeNames.length)
 
-      // const originalScopeStack = originalScopeStackByScopeName[scopeName]
-      // if (!originalScopeStack) return
-      // const matchedScope = convertGrammarScopeToDatabaseScope(originalScopeStack.split(" "))
-      // if (matchedScope !== scopeName) ranksByPrimaryScopeName[scopeName] += 1
-      const matchedScope = convertGrammarScopeToDatabaseScope(scopeName.split(" "))
+      const originalScopeStack = originalScopeStackByScopeName[scopeName]
+      if (!originalScopeStack) return
+      const matchedScope = convertGrammarScopeToDatabaseScope(originalScopeStack.split(" "))
       if (matchedScope !== scopeName) ranksByPrimaryScopeName[scopeName] += 1
     })
   }

@@ -17,7 +17,7 @@ db.execute("""
 CREATE TABLE scopes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    -- original_scope_stack TEXT,
+    original_scope_stack TEXT,
     cluster_scope_id INTEGER
 )
 """)

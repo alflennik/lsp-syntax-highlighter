@@ -190,6 +190,8 @@
                 .map(
                   token =>
                     `<span style="color: ${token.color}; font-style: ${token.fontStyle};">${token.content
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
                       .replace(/ /g, "&nbsp;")
                       .replace(/\t/g, "&nbsp;&nbsp;")}</span>`,
                 )

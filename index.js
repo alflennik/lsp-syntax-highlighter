@@ -58,9 +58,13 @@ const Highlighter = async ({ languages }) => {
 
     let context = vsctm.INITIAL
     code.split("\n").forEach((line, lineIndex) => {
+      // console.log("---")
+      // console.log(JSON.stringify(line))
+      // console.log("---")
       const lineTokens = grammar.tokenizeLine(line, context)
 
       lineTokens.tokens.forEach(({ startIndex, endIndex, scopes }) => {
+        // console.log(JSON.stringify(line.slice(startIndex, endIndex)))
         const length = endIndex - startIndex
         grammarTokens.push({ lineIndex, columnIndex: startIndex, length, scopes })
       })
