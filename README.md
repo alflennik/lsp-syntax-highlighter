@@ -2,6 +2,81 @@
 
 Add syntax highlighting to your LSP, officially compatible with VSCode and Cursor.
 
+## Usage
+
+```js
+const initializeHighlighter = require('lsp-syntax-highlighter')
+const jsonGrammar = require('./grammars/jsonGrammar.json')
+const htmlGrammar = require('./grammars/htmlGrammar.json')
+const cssGrammar = require('./grammars/cssGrammar.json')
+const jsGrammar = require('./grammars/jsGrammar.json')
+
+const grammars = [jsonGrammar, htmlGrammar, cssGrammar, jsGrammar]
+
+const highlighterPromise = await initializeHighlighter({ grammars })
+
+const mySemanticTokenHandler = async (myTextDocument) => {
+  const { highlight } = await highlighterPromise
+
+  const textDocumentLines = myTextDocument.split('\n')
+
+  const { encodedTokens, tokens } = highlight({ 
+    lines: textDocumentLines,
+    sections: [
+      { 
+        startLineIndex: 0,
+        startColumnIndex: 11,
+        endLineIndex: 0,
+        endColumnIndex: 75,
+        grammar: 'json'
+      },
+      { 
+        startLineIndex: 3,
+        startColumnIndex: 33,
+        endLineIndex: 7,
+        endColumnIndex: 9,
+        grammar: 'css',
+        startContextString: "style {",
+        endContextString: "}",
+      },
+      { 
+        startLineIndex: 20,
+        startColumnIndex: 26,
+        endLineIndex: 23,
+        endColumnIndex: 6,
+        grammar: 'html',
+        skippedSections: [
+          { 
+            startLineIndex: 21,
+            startColumnIndex: 47,
+            endLineIndex: 21,
+            endColumnIndex: 94,
+            replacement: '<head></head>',
+          },
+        ]
+      },
+      {
+        startLineIndex: 21,
+        startColumnIndex: 49,
+        endLineIndex: 21,
+        endColumnIndex: 92,
+        grammar: 'css',
+        startContextString: "style {",
+        endContextString: "}",
+      }
+    ]
+  })
+
+  console.log(tokens)
+
+  return { data: encodedTokens }
+}
+```
+
+# Old:
+
+
+
 ## Installation
 
 Make sure you have a working LSP implementation integrated with VSCode. There are some samples provided by VSCode, and I can recommend https://github.com/semanticart/lsp-from-scratch/.

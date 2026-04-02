@@ -1,55 +1,48 @@
-let databaseScopesByRank
-let maximumRank
+const initializeConverter = scopesByRank => {
+  const databaseScopesByRank = scopesByRank
+  const maximumRank = Number(Object.keys(databaseScopesByRank).pop())
 
-const Converter = scopesByRank => {
-  databaseScopesByRank = scopesByRank
+  const convertGrammarScopeToDatabaseScope = (
+    grammarScopeStack,
+    { diagnosticReturnAllMatches = false } = {},
+  ) => {
+    let i = 0
+    let rank = maximumRank
+    let iterationCount = 0
+    const maxIterationCount = 100_000_000
+    while (true) {
+      iterationCount += 1
+      if (iterationCount > maxIterationCount) throw new Error("Max iteration count exceeded")
 
-  maximumRank = Number(Object.keys(databaseScopesByRank).pop())
+      const currentRankContainsItems = !!databaseScopesByRank[rank]
+      if (!currentRankContainsItems) {
+        if (rank === 0) break
+        rank -= 1
+        continue
+      }
 
-  return convertGrammarScopeToDatabaseScope
-}
+      const databaseScopeStack = databaseScopesByRank[rank][i]
+      const isMatch = matchScopeStacks(grammarScopeStack, databaseScopeStack.split(" "))
+      if (isMatch) {
+        if (!diagnosticReturnAllMatches) {
+          return databaseScopeStack
+        } else {
+          console.log(databaseScopeStack, rank)
+        }
+      }
 
-const convertGrammarScopeToDatabaseScope = (
-  grammarScopeStack,
-  { diagnosticReturnAllMatches = false } = {},
-) => {
-  let i = 0
-  let rank = maximumRank
-  let iterationCount = 0
-  const maxIterationCount = 100_000_000
-  while (true) {
-    iterationCount += 1
-    if (iterationCount > maxIterationCount) throw new Error("Max iteration count exceeded")
-
-    const currentRankContainsItems = !!databaseScopesByRank[rank]
-    if (!currentRankContainsItems) {
-      if (rank === 0) break
-      rank -= 1
-      continue
-    }
-
-    const databaseScopeStack = databaseScopesByRank[rank][i]
-    // if (databaseScopeStack === "source.css") {
-    //   debugger
-    // }
-    const isMatch = matchScopeStacks(grammarScopeStack, databaseScopeStack.split(" "))
-    if (isMatch) {
-      if (!diagnosticReturnAllMatches) {
-        return databaseScopeStack
-      } else {
-        console.log(databaseScopeStack, rank)
+      i += 1
+      if (i === databaseScopesByRank[rank].length) {
+        if (rank === 0) break // Failed to find even a single match
+        rank -= 1
+        i = 0
+        continue // No matches in this rank, try the next one down
       }
     }
-
-    i += 1
-    if (i === databaseScopesByRank[rank].length) {
-      if (rank === 0) break // Failed to find even a single match
-      rank -= 1
-      i = 0
-      continue // No matches in this rank, try the next one down
-    }
+    return undefined
   }
-  return undefined
+
+  return { convertGrammarScopeToDatabaseScope }
 }
 
 const matchScopeStacks = (grammarScopeStack, databaseScopeStack) => {
@@ -83,4 +76,4 @@ const matchSingleScope = (grammarScope, databaseScope) => {
   return true
 }
 
-module.exports = Converter
+module.exports = initializeConverter

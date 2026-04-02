@@ -4,7 +4,7 @@ const vsctm = require("vscode-textmate")
 const oniguruma = require("vscode-oniguruma")
 const colors = require("./colors.json")
 const database = require("./database.json")
-const Converter = require("./library/convertGrammarScopeToDatabaseScope")
+const initializeConverter = require("./library/convertGrammarScopeToDatabaseScope")
 
 const colorsToIndexes = Object.fromEntries(
   colors.map((color, index) => {
@@ -18,8 +18,12 @@ Object.entries(database.primary).forEach(([scope, { rank }]) => {
   scopesByRank[rank].push(scope)
 })
 
-const Highlighter = async ({ languages }) => {
-  const convertGrammarScopeToDatabaseScope = Converter(scopesByRank)
+const initializeHighlighter = async ({ grammars } = {}) => {
+  if (!grammars || !grammars.length) {
+    throw new Error("no grammars were provided")
+  }
+
+  const { convertGrammarScopeToDatabaseScope } = initializeConverter(scopesByRank)
 
   // See https://www.npmjs.com/package/vscode-textmate
   const wasmBin = fs.readFileSync(
@@ -37,7 +41,6 @@ const Highlighter = async ({ languages }) => {
     }
   })
 
-  // Create a registry that can create a grammar from a scope name.
   const registry = new vsctm.Registry({
     onigLib: vscodeOnigurumaLib,
     loadGrammar: scopeName => {
@@ -45,34 +48,56 @@ const Highlighter = async ({ languages }) => {
     },
   })
 
-  // Load the grammar and any other grammars included by it async.
   const grammars = {}
   for (const language of languages) {
     grammars[language.name] = await registry.loadGrammar(language.scopeName)
   }
 
-  const highlight = (code, { language: languageName, lineOffset = 0, columnOffset = 0 }) => {
-    const grammar = grammars[languageName]
+  const tokensUnsorted = []
+
+  const highlightSection = ({
+    lines,
+    grammar: grammarName,
+    startLineOffset,
+    startColumnOffset,
+    skippedSections,
+  }) => {
+    if (!grammarName) throw new Error("grammar cannot be undefined")
+    const grammar = grammars[grammarName]
+    if (!grammar) {
+      const grammarsFormatted = grammars.map(grammar => grammar.name).join(", ")
+      throw new Error(
+        `grammar for ${grammarName} not found (provided grammars: ${grammarsFormatted})`,
+      )
+    }
+
+    const indexes = {}
+    lines.forEach((line, sectionLineIndex) => {
+      line.split("").forEach((character, sectionColumnIndex) => {
+        const lineIndex = sectionLineIndex + startLineOffset
+        const columnIndex =
+          sectionLineIndex === 0 ? sectionColumnIndex + startColumnOffset : sectionColumnIndex
+        indexes[`${sectionLineIndex}:${sectionColumnIndex}`] = [lineIndex, columnIndex]
+      })
+    })
 
     const grammarTokens = []
 
-    let context = vsctm.INITIAL
-    code.split("\n").forEach((line, lineIndex) => {
-      // console.log("---")
-      // console.log(JSON.stringify(line))
-      // console.log("---")
-      const lineTokens = grammar.tokenizeLine(line, context)
+    let vsctmContext = vsctm.INITIAL
+    lines.forEach((line, sectionLineIndex) => {
+      const lineTokens = grammar.tokenizeLine(line, vsctmContext)
 
-      lineTokens.tokens.forEach(({ startIndex, endIndex, scopes }) => {
-        // console.log(JSON.stringify(line.slice(startIndex, endIndex)))
-        const length = endIndex - startIndex
-        grammarTokens.push({ lineIndex, columnIndex: startIndex, length, scopes })
-      })
+      lineTokens.tokens.forEach(
+        ({ startIndex: sectionColumnIndex, endIndex: sectionColumnEndIndex, scopes }) => {
+          const content = line.slice(sectionColumnIndex, sectionColumnEndIndex)
+          grammarTokens.push({ sectionLineIndex, sectionColumnIndex, content, scopes })
+        },
+      )
 
-      context = lineTokens.ruleStack
+      vsctmContext = lineTokens.ruleStack
     })
 
-    const tokens = grammarTokens.map(({ lineIndex, columnIndex, length, scopes }) => {
+    grammarTokens.forEach(({ sectionLineIndex, sectionColumnIndex, content, scopes }) => {
       const databaseScope = convertGrammarScopeToDatabaseScope(scopes)
 
       let semanticToken
@@ -84,38 +109,79 @@ const Highlighter = async ({ languages }) => {
         semanticToken = database.primary.default.semanticToken
       }
 
-      return {
-        lineIndex: lineOffset + lineIndex,
-        columnIndex: columnOffset + columnIndex,
-        length,
-        semanticToken,
-      }
+      tokens.push({ sectionLineIndex, sectionColumnIndex, content, semanticToken })
     })
 
-    let lastLineIndex = 0
-    let lastColumnIndex = 0
-
-    const encodedTokens = []
-
-    tokens.forEach(({ lineIndex, columnIndex, length, semanticToken }) => {
-      const semanticTokenIndex = colorsToIndexes[semanticToken]
-
-      encodedTokens.push(
-        lineIndex - lastLineIndex,
-        columnIndex - lastColumnIndex,
-        length,
-        semanticTokenIndex,
-        tokenModifiersEncoded,
-      )
-
-      lastLineIndex = lineIndex
-      lastColumnIndex = columnIndex
-    })
-
-    return { encodedTokens, tokens }
+    return tokens
   }
 
-  return { highlight }
+  const highlight = ({ lines, sections }) => {
+    const sectionLines = {}
+
+    sections.forEach((section, sectionIndex) => {
+      const firstLine = lines[section.startLineIndex].slice(startColumnIndex)
+      const hasTwoOrMoreLines = section.endLineIndex - section.startLineIndex >= 2
+      const hasThreeOrMoreLines = section.endLineIndex - section.startLineIndex >= 3
+      let middleLines
+      if (hasThreeOrMoreLines) {
+        middleLines = lines.slice(section.startLineIndex + 1, section.endLineIndex - 1)
+      }
+      let lastLine
+      if (hasTwoOrMoreLines) {
+        lastLine = lines[section.endLineIndex].slice(0, endColumnIndex)
+      }
+      sectionLines[sectionIndex] = [
+        firstLine,
+        ...(middleLines ?? []),
+        ...(lastLine ? [lastLine] : []),
+      ]
+    })
+  }
+
+  const highlightMultiple = optionsArray => {
+    const allTokens = []
+
+    optionsArray.forEach(options => {
+      // The encodedTokens returned from highlight don't factor in the fact that there might be
+      // multiple highlighted portions in one file. The tokens variable is unaffected since it uses
+      // actual line indexes, however the encodedTokens breaks because it contains deltas. That's
+      // why the tokens need to be collected and then encoded together at the end.
+      const { tokens } = highlight(options)
+
+      allTokens.push(...tokens)
+    })
+
+    const encodedTokens = encodeTokens(allTokens)
+
+    return { encodedTokens: encodedTokens, tokens: allTokens }
+  }
+
+  return { highlight, highlightMultiple }
+}
+
+const encodeTokens = tokens => {
+  let lastLineIndex = 0
+  let lastColumnIndex = 0
+
+  const encodedTokens = []
+
+  tokens.forEach(({ lineIndex, columnIndex, content, semanticToken }) => {
+    const semanticTokenIndex = colorsToIndexes[semanticToken]
+
+    encodedTokens.push(
+      lineIndex - lastLineIndex,
+      // Ignore the previous column index if it's a new line
+      lastLineIndex === lineIndex ? columnIndex - lastColumnIndex : columnIndex,
+      content.length,
+      semanticTokenIndex,
+      tokenModifiersEncoded,
+    )
+
+    lastLineIndex = lineIndex
+    lastColumnIndex = columnIndex
+  })
+
+  return encodedTokens
 }
 
 const convertIntegerArrayToBitmask = indexes => {
@@ -132,4 +198,4 @@ const convertIntegerArrayToBitmask = indexes => {
 
 const tokenModifiersEncoded = convertIntegerArrayToBitmask([0])
 
-module.exports = Highlighter
+module.exports = initializeHighlighter
