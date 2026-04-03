@@ -99,9 +99,6 @@ const mapSectionIndexesToDocumentIndexes = sections => {
     })()
 
     section.skippedSections?.forEach((skippedSection, skippedSectionIndex) => {
-      if (skippedSectionIndex === 1) {
-        console.log()
-      }
       const nextSkippedSection = section.skippedSections?.[skippedSectionIndex + 1]
 
       let hasGap
@@ -194,5 +191,10 @@ const mapSectionIndexesToDocumentIndexes = sections => {
 
   return { getDocumentIndexes }
 }
+
+/**
+ *
+ */
+const normalizeSections = sections => {}
 
 module.exports = mapSectionIndexesToDocumentIndexes

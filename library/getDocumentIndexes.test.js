@@ -172,31 +172,31 @@ describe("getDocumentIndexes", () => {
     */
 
     const sections = [
-      // {
-      //   startLineIndex: 10,
-      //   startColumnIndex: 12,
-      //   endLineIndex: 18,
-      //   endColumnIndex: 0,
-      //   grammar: "js",
-      //   startContextString: "() => {",
-      //   endContextString: "}",
-      //   skippedSections: [
-      //     {
-      //       startLineIndex: 11,
-      //       startColumnIndex: 19,
-      //       endLineIndex: 11,
-      //       endColumnIndex: 30,
-      //       replacement: "''",
-      //     },
-      //     {
-      //       startLineIndex: 12,
-      //       startColumnIndex: 44,
-      //       endLineIndex: 15,
-      //       endColumnIndex: 5,
-      //       replacement: "''",
-      //     },
-      //   ],
-      // },
+      {
+        startLineIndex: 10,
+        startColumnIndex: 12,
+        endLineIndex: 18,
+        endColumnIndex: 0,
+        grammar: "js",
+        startContextString: "() => {",
+        endContextString: "}",
+        skippedSections: [
+          {
+            startLineIndex: 11,
+            startColumnIndex: 19,
+            endLineIndex: 11,
+            endColumnIndex: 30,
+            replacement: "''",
+          },
+          {
+            startLineIndex: 12,
+            startColumnIndex: 44,
+            endLineIndex: 15,
+            endColumnIndex: 5,
+            replacement: "''",
+          },
+        ],
+      },
       {
         startLineIndex: 20,
         startColumnIndex: 18,
