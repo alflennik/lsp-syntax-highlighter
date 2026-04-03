@@ -21,45 +21,35 @@ const mySemanticTokenHandler = async (myTextDocument) => {
   const textDocumentLines = myTextDocument.split('\n')
 
   const { encodedTokens, tokens } = highlight({ 
-    lines: textDocumentLines,
+    code: textDocument,
     sections: [
       { 
-        startLineIndex: 0,
-        startColumnIndex: 11,
-        endLineIndex: 0,
-        endColumnIndex: 75,
+        startOffset: 21,
+        endOffset: 68,
         grammar: 'json'
       },
       { 
-        startLineIndex: 3,
-        startColumnIndex: 33,
-        endLineIndex: 7,
-        endColumnIndex: 9,
+        startOffset: 87,
+        endOffset: 156,
         grammar: 'css',
         startContextString: "style {",
         endContextString: "}",
       },
       { 
-        startLineIndex: 20,
-        startColumnIndex: 26,
-        endLineIndex: 23,
-        endColumnIndex: 6,
+        startOffset: 170,
+        endOffset: 349,
         grammar: 'html',
         skippedSections: [
           { 
-            startLineIndex: 21,
-            startColumnIndex: 47,
-            endLineIndex: 21,
-            endColumnIndex: 94,
-            replacement: '<head></head>',
-          },
+            startOffset: 191,
+            endOffset: 310,
+            replacement: '""',
+          }
         ]
       },
       {
-        startLineIndex: 21,
-        startColumnIndex: 49,
-        endLineIndex: 21,
-        endColumnIndex: 92,
+        startOffset: 211,
+        endOffset: 310,
         grammar: 'css',
         startContextString: "style {",
         endContextString: "}",
