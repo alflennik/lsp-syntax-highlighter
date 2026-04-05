@@ -21,119 +21,156 @@ return *(
 )*<Source.Html>
 */
 
-const transformForHighlighting = ({ code, section }) => {
-  /**
-   * {
-   *   type: "replacement" | "section",
-   *   offset: number,
-   *   content: string,
-   *   replacement?: string,
-   * }
-   */
+const transformForHighlighting = ({ text, section }) => {
   const parts = []
 
-  const chars = code.split("")
+  const characters = text.split("")
 
   if (section.replacements) {
     section.replacements.forEach(replacement => {
-      const { text, startOffset, endOffset } = replacement
-      const content = extract(chars, startOffset, endOffset)
-      parts.push({ type: "replacement", offset: startOffset, content, ...(text && { text }) })
+      const { text: replacementText, startOffset, endOffset } = replacement
+      const content = extract(characters, startOffset, endOffset)
+      parts.push({
+        type: "replacement",
+        originalOffset: startOffset,
+        content,
+        ...(replacementText && { replacementText }),
+      })
     })
   }
 
-  let currentOffset
-  let currentContent
-  for (let i = 0; i < chars.length; i += 1) {
-    const char = chars[i]
-    if (char) {
-      if (!currentContent) {
-        currentOffset = i
-        currentContent = char
+  ;(() => {
+    let currentOffset
+    let currentContent
+
+    for (let i = section.startOffset; i < section.endOffset; i += 1) {
+      const character = characters[i]
+      if (character) {
+        if (!currentContent) {
+          currentOffset = i
+          currentContent = character
+        } else {
+          currentContent += character
+        }
       } else {
-        currentContent += char
-      }
-    } else {
-      if (currentContent) {
-        parts.push({ type: "section", offset: currentOffset, content: currentContent })
-        currentOffset = undefined
-        currentContent = undefined
+        if (currentContent) {
+          parts.push({ type: "section", originalOffset: currentOffset, content: currentContent })
+          currentOffset = undefined
+          currentContent = undefined
+        }
       }
     }
-  }
+    if (currentContent) {
+      parts.push({ type: "section", originalOffset: currentOffset, content: currentContent })
+    }
+  })()
 
-  parts.sort((a, b) => a.offset - b.offset)
+  parts.sort((a, b) => a.originalOffset - b.originalOffset)
   ;(() => {
-    let lineIndex = 0
-    let columnIndex = 0
+    const precedingText = text.slice(0, section.startOffset)
+    const precedingNewlines = precedingText.split("").filter(character => character === "\n").length
+
+    originalLineIndex = precedingNewlines
+
+    if (precedingNewlines) {
+      originalColumnIndex = precedingText.length - precedingText.lastIndexOf("\n") - 1
+    } else {
+      originalColumnIndex = precedingText.length
+    }
+
     for (let i = 0; i < parts.length; i += 1) {
-      parts[i].lineIndex = lineIndex
-      parts[i].columnIndex = columnIndex
+      parts[i].originalLineIndex = originalLineIndex
+      parts[i].originalColumnIndex = originalColumnIndex
 
       const content = parts[i].content
-      const newlineCount = content.filter(character => character === "\n").length
-      lineIndex += newlineCount
+      const newlineCount = content.split("").filter(character => character === "\n").length
+      originalLineIndex += newlineCount
 
       if (newlineCount) {
-        columnIndex = content.length - content.lastIndexOf("\n")
+        originalColumnIndex = content.length - content.lastIndexOf("\n") - 1
       }
     }
   })()
 
   let transformed = ""
-  const offsetConversions = {}
 
-  if (section.startContextString) {
-    offsetConversions[0] = null
-    transformed += section.startContextString
-  }
-
-  let transformedLineIndex = 0
-  let transformedColumnIndex = 0
-
-  for (const part of parts) {
-    const {
-      type,
-      offset: originalOffset,
-      lineIndex: originalLineIndex,
-      columnIndex: originalColumnIndex,
-      content,
-      replacement,
-    } = part
+  for (let i = 0; i < parts.length; i += 1) {
+    const { type, content, replacementText } = parts[i]
 
     let contentToAdd
     if (type === "section") {
       contentToAdd = content
-    } else if (type === "replacement" && replacement) {
-      contentToAdd = replacement
+    } else if (type === "replacement" && replacementText) {
+      contentToAdd = replacementText
     }
 
     if (contentToAdd) {
-      const newlineCount = content.filter(character => character === "\n").length
-      lineIndex += newlineCount
-
-      if (newlineCount) {
-        columnIndex = content.length - content.lastIndexOf("\n")
-      }
-
-      const key = `${transformedLineIndex}:${transformedColumnIndex}`
-
-      offsetConversions[key] = { originalLineIndex, originalColumnIndex, originalOffset }
+      parts[i].transformedOffset = transformed.length
 
       transformed += contentToAdd
     }
   }
 
-  return { transformed, offsetConversions }
+  const convertIndexes = transformedOffset => {
+    const part = binarySearch(parts, candidate => {
+      if (transformedOffset < candidate.transformedOffset) {
+        return 1
+      } else if (transformedOffset > candidate.transformedOffset) {
+        return -1
+      } else if (transformedOffset === candidate.transformedOffset) {
+        return 0
+      }
+    })
+
+    if (part.type === "replacement") return null
+
+    const delta = transformedOffset - part.transformedOffset
+    const deltaContent = transformed.slice(part.transformedOffset, transformedOffset)
+    const deltaNewlines = deltaContent.split("").filter(character => character === "\n").length
+
+    const originalOffset = part.originalOffset + delta
+
+    const originalLineIndex = part.originalLineIndex + deltaNewlines
+
+    const originalColumnIndex = deltaNewlines
+      ? deltaContent.length - deltaContent.lastIndexOf("\n") - 1
+      : part.originalColumnIndex + deltaContent.length
+
+    return { originalOffset, originalLineIndex, originalColumnIndex }
+  }
+
+  return { transformed, convertIndexes }
+}
+
+const binarySearch = (array, compare) => {
+  let searchStart = 0
+  let searchEnd = array.length - 1
+  let candidateIndex = null
+
+  while (searchStart <= searchEnd) {
+    const middleIndex = Math.floor((searchStart + searchEnd) / 2)
+    const comparison = compare(array[middleIndex])
+
+    if (comparison === 0) {
+      return array[middleIndex]
+    } else if (comparison === -1) {
+      candidateIndex = middleIndex
+      searchStart = middleIndex + 1
+    } else if (comparison === 1) {
+      searchEnd = middleIndex - 1
+    }
+  }
+
+  return candidateIndex === null ? null : array[candidateIndex]
 }
 
 const extract = (array, startIndex, endIndex) => {
-  const chars = []
+  const characters = []
   for (let i = startIndex; i < endIndex; i += 1) {
-    chars.push(array[i])
+    characters.push(array[i])
     array[i] = undefined
   }
-  return chars.join()
+  return characters.join()
 }
 
 module.exports = transformForHighlighting

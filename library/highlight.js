@@ -2,8 +2,8 @@ const fs = require("fs")
 const path = require("path")
 const vsctm = require("vscode-textmate")
 const oniguruma = require("vscode-oniguruma")
-const colors = require("./colors.json")
-const database = require("./database.json")
+const colors = require("../colors.json")
+const database = require("../database.json")
 const initializeGetDatabaseScope = require("./getDatabaseScope")
 const transformForHighlighting = require("./transformForHighlighting")
 
@@ -28,7 +28,7 @@ const initializeHighlighter = async ({ grammars } = {}) => {
 
   // See https://www.npmjs.com/package/vscode-textmate
   const wasmBin = fs.readFileSync(
-    path.join(__dirname, "./node_modules/vscode-oniguruma/release/onig.wasm"),
+    path.join(__dirname, "../node_modules/vscode-oniguruma/release/onig.wasm"),
   ).buffer
 
   const vscodeOnigurumaLib = oniguruma.loadWASM(wasmBin).then(() => {
@@ -45,20 +45,20 @@ const initializeHighlighter = async ({ grammars } = {}) => {
   const registry = new vsctm.Registry({
     onigLib: vscodeOnigurumaLib,
     loadGrammar: scopeName => {
-      return languages.find(language => language.scopeName === scopeName)
+      return grammars.find(grammar => grammar.scopeName === scopeName)
     },
   })
 
-  const grammars = {}
-  for (const language of languages) {
-    grammars[language.name] = await registry.loadGrammar(language.scopeName)
+  const vsctmGrammars = {}
+  for (const grammar of grammars) {
+    vsctmGrammars[grammar.name] = await registry.loadGrammar(grammar.scopeName)
   }
 
   const highlight = ({ text, sections }) => {
     const tokens = []
 
     sections.forEach(section => {
-      const { transformed, offsetConversions } = transformForHighlighting({ text, sections })
+      const { transformed, convertIndexes } = transformForHighlighting({ text, section })
 
       const tokensTransformed = highlightSection({
         text: transformed,
@@ -66,14 +66,13 @@ const initializeHighlighter = async ({ grammars } = {}) => {
       })
 
       tokensTransformed.forEach(tokenTransformed => {
-        const { originalLineIndex, originalColumnIndex, originalOffset } =
-          offsetConversions[`${tokenTransformed.lineIndex}:${tokenTransformed.columnIndex}`]
+        const indexes = convertIndexes(tokenTransformed.offset)
 
-        if (originalLineIndex && originalColumnIndex) {
+        if (indexes) {
           tokens.push({
-            offset: originalOffset,
-            lineIndex: originalLineIndex,
-            columnIndex: originalColumnIndex,
+            offset: indexes.originalOffset,
+            lineIndex: indexes.originalLineIndex,
+            columnIndex: indexes.originalColumnIndex,
             content: tokenTransformed.content,
             semanticToken: tokenTransformed.semanticToken,
           })
@@ -90,8 +89,8 @@ const initializeHighlighter = async ({ grammars } = {}) => {
 
   const highlightSection = ({ text, grammarName }) => {
     if (!grammarName) throw new Error("grammar cannot be undefined")
-    const grammar = grammars[grammarName]
-    if (!grammar) {
+    const vsctmGrammar = vsctmGrammars[grammarName]
+    if (!vsctmGrammar) {
       const grammarsFormatted = grammars.map(grammar => grammar.name).join(", ")
       throw new Error(
         `grammar for ${grammarName} not found (provided grammars: ${grammarsFormatted})`,
@@ -100,19 +99,28 @@ const initializeHighlighter = async ({ grammars } = {}) => {
 
     const grammarTokens = []
 
+    let offset = 0
     let vsctmContext = vsctm.INITIAL
-    text.split("").forEach((line, lineIndex) => {
-      const lineTokens = grammar.tokenizeLine(line, vsctmContext)
+    text.split("\n").forEach((line, lineIndex) => {
+      if (lineIndex !== 0) {
+        offset += 1 // make sure offset accounts for newlines
+      }
+
+      const lineTokens = vsctmGrammar.tokenizeLine(line, vsctmContext)
 
       lineTokens.tokens.forEach(({ startIndex: columnIndex, endIndex: endColumnIndex, scopes }) => {
         const content = line.slice(columnIndex, endColumnIndex)
-        grammarTokens.push({ lineIndex, columnIndex, content, scopes })
+        grammarTokens.push({ offset, lineIndex, columnIndex, content, scopes })
+
+        offset += content.length
       })
 
       vsctmContext = lineTokens.ruleStack
     })
 
-    grammarTokens.forEach(({ lineIndex, columnIndex, content, scopes }) => {
+    const tokens = []
+
+    grammarTokens.forEach(({ offset, lineIndex, columnIndex, content, scopes }) => {
       const databaseScope = getDatabaseScope(scopes)
 
       let semanticToken
@@ -124,7 +132,7 @@ const initializeHighlighter = async ({ grammars } = {}) => {
         semanticToken = database.primary.default.semanticToken
       }
 
-      tokens.push({ lineIndex, columnIndex, content, semanticToken })
+      tokens.push({ offset, lineIndex, columnIndex, content, semanticToken })
     })
 
     return tokens
