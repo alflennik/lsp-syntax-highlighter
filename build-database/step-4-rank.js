@@ -2,7 +2,7 @@ const sqlite3 = require("sqlite3").verbose()
 const path = require("path")
 const fs = require("fs/promises")
 const packageJson = require("../package.json")
-const Converter = require("../library/convertGrammarScopeToDatabaseScope")
+const Converter = require("../library/getDatabaseScope")
 
 const step4 = async () => {
   const currentMajorVersion = parseInt(packageJson.version.match(/^\d+/)[0])

@@ -21,10 +21,10 @@ return *(
 )*<Source.Html>
 */
 
-const convertOffsets = (code, section) => {
+const transformForHighlighting = ({ code, section }) => {
   /**
    * {
-   *   type: "skipped" | "section",
+   *   type: "replacement" | "section",
    *   offset: number,
    *   content: string,
    *   replacement?: string,
@@ -34,17 +34,12 @@ const convertOffsets = (code, section) => {
 
   const chars = code.split("")
 
-  if (section.skippedSections) {
-    for (const skippedSection of section.skippedSections) {
-      const { replacement, startOffset, endOffset } = skippedSection
+  if (section.replacements) {
+    section.replacements.forEach(replacement => {
+      const { text, startOffset, endOffset } = replacement
       const content = extract(chars, startOffset, endOffset)
-      parts.push({
-        type: "skipped",
-        offset: startOffset,
-        content,
-        ...(replacement && { replacement }),
-      })
-    }
+      parts.push({ type: "replacement", offset: startOffset, content, ...(text && { text }) })
+    })
   }
 
   let currentOffset
@@ -67,6 +62,24 @@ const convertOffsets = (code, section) => {
     }
   }
 
+  parts.sort((a, b) => a.offset - b.offset)
+  ;(() => {
+    let lineIndex = 0
+    let columnIndex = 0
+    for (let i = 0; i < parts.length; i += 1) {
+      parts[i].lineIndex = lineIndex
+      parts[i].columnIndex = columnIndex
+
+      const content = parts[i].content
+      const newlineCount = content.filter(character => character === "\n").length
+      lineIndex += newlineCount
+
+      if (newlineCount) {
+        columnIndex = content.length - content.lastIndexOf("\n")
+      }
+    }
+  })()
+
   let transformed = ""
   const offsetConversions = {}
 
@@ -75,13 +88,39 @@ const convertOffsets = (code, section) => {
     transformed += section.startContextString
   }
 
-  for (const { type, offset, content, replacement } of parts) {
+  let transformedLineIndex = 0
+  let transformedColumnIndex = 0
+
+  for (const part of parts) {
+    const {
+      type,
+      offset: originalOffset,
+      lineIndex: originalLineIndex,
+      columnIndex: originalColumnIndex,
+      content,
+      replacement,
+    } = part
+
+    let contentToAdd
     if (type === "section") {
-      offsetConversions[transformed.length] = offset
-      transformed += content
-    } else if (type === "skipped" && replacement) {
-      offsetConversions[transformed.length] = offset
-      transformed += replacement
+      contentToAdd = content
+    } else if (type === "replacement" && replacement) {
+      contentToAdd = replacement
+    }
+
+    if (contentToAdd) {
+      const newlineCount = content.filter(character => character === "\n").length
+      lineIndex += newlineCount
+
+      if (newlineCount) {
+        columnIndex = content.length - content.lastIndexOf("\n")
+      }
+
+      const key = `${transformedLineIndex}:${transformedColumnIndex}`
+
+      offsetConversions[key] = { originalLineIndex, originalColumnIndex, originalOffset }
+
+      transformed += contentToAdd
     }
   }
 
@@ -96,3 +135,5 @@ const extract = (array, startIndex, endIndex) => {
   }
   return chars.join()
 }
+
+module.exports = transformForHighlighting

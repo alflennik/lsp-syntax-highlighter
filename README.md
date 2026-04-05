@@ -1,11 +1,13 @@
 # LSP Syntax Highlighter
 
-Add syntax highlighting to your LSP, officially compatible with VSCode and Cursor.
+Add syntax highlighting to your language server, officially compatible with VSCode and Cursor.
+
+**⚠️ Important Limitations**: The languages grammars you support must be packaged into your extension and cannot be dynamically loaded, and VSCode may experience poor performance if you include more than 2-3 complex languages (like JavaScript or Python), or 6-7 small languages (like JSON, HTML or CSS).
 
 ## Usage
 
 ```js
-const initializeHighlighter = require('lsp-syntax-highlighter')
+const { initializeHighlighter } = require('lsp-syntax-highlighter')
 const jsonGrammar = require('./grammars/jsonGrammar.json')
 const htmlGrammar = require('./grammars/htmlGrammar.json')
 const cssGrammar = require('./grammars/cssGrammar.json')
@@ -15,44 +17,38 @@ const grammars = [jsonGrammar, htmlGrammar, cssGrammar, jsGrammar]
 
 const highlighterPromise = await initializeHighlighter({ grammars })
 
-const mySemanticTokenHandler = async (myTextDocument) => {
+const mySemanticTokenHandler = async (textDocument) => {
   const { highlight } = await highlighterPromise
 
-  const textDocumentLines = myTextDocument.split('\n')
-
   const { encodedTokens, tokens } = highlight({ 
-    code: textDocument,
+    text: textDocument,
     sections: [
-      { 
-        startOffset: 21,
-        endOffset: 68,
-        grammar: 'json'
-      },
+      { startOffset: 21, endOffset: 68, grammar: 'json' },
       { 
         startOffset: 87,
         endOffset: 156,
         grammar: 'css',
-        startContextString: "style {",
-        endContextString: "}",
+        replacements: [
+          { startOffset: 87, endOffset: 87, text: "style {" }
+          { startOffset: 156, endOffset: 156, text: "}" }
+        ]
       },
       { 
         startOffset: 170,
         endOffset: 349,
         grammar: 'html',
-        skippedSections: [
-          { 
-            startOffset: 191,
-            endOffset: 310,
-            replacement: '""',
-          }
+        replacements: [
+          { startOffset: 191, endOffset: 310, text: '""' }
         ]
       },
       {
         startOffset: 211,
         endOffset: 310,
         grammar: 'css',
-        startContextString: "style {",
-        endContextString: "}",
+        replacements: [
+          { startOffset: 211, endOffset: 211, text: 'style {' }
+          { startOffset: 310, endOffset: 310, text: '}' }
+        ]
       }
     ]
   })
@@ -63,152 +59,161 @@ const mySemanticTokenHandler = async (myTextDocument) => {
 }
 ```
 
-# Old:
+## Installation Guide
 
+You will need a working LSP implementation that works with VSCode or Cursor. There are some samples provided by VSCode, and I can recommend https://github.com/semanticart/lsp-from-scratch/.
 
-
-## Installation
-
-Make sure you have a working LSP implementation integrated with VSCode. There are some samples provided by VSCode, and I can recommend https://github.com/semanticart/lsp-from-scratch/.
-
-From your LSP's VSCode extension folder, run:
+Install this package:
 
 ```
 npm install lsp-syntax-highlighter
 ```
 
-With the full list on the [contributes page](./contributes.md), add the following to your extension's package.json:
+Inside your extension's repository, create a folder called "grammars" and populate it with JSON grammar files for the languages you want to support. There are a huge number of grammars collated by the Shiki library here: 
 
-```json
-{
-  // ...
-  "contributes": {
-    // ... any others
-    "configurationDefaults": {
-      "editor.semanticHighlighting.enabled": true
-    },
-    "semanticTokenScopes": [
-      {
-        "scopes": {
-          "color1.version1": ["meta.brace.square"],
-          "color2.version1": ["beginning.punctuation.definition.list.markdown"],
-          "color3.version1": ["brackethighlighter.angle"],
-          "color4.version1": ["brackethighlighter.unmatched"],
-          "color5.version1": ["carriage-return"],
-          "color6.version1": ["comment"],
-          "color7.version1": ["comment","keyword.codetag.notation"],
-          "color8.version1": ["comment.block.documentation","entity.name.type"],
-          "color9.version1": ["comment.block.documentation","entity.name.type","punctuation.definition.bracket"],
-          "color10.version1": ["comment.block.documentation","markup.inline.raw.string.markdown"],
-          "color11.version1": ["comment.block.documentation","punctuation"],
-          "color12.version1": ["comment.block.documentation","storage"],
-          "color13.version1": ["comment.block.documentation","storage.type"],
-          "color14.version1": ["comment.block.documentation","support"],
-          // ...
-          "color297.version1": ["variable.language","punctuation.definition.variable.php"],
-          "color298.version1": ["variable.language.this"],
-          "color299.version1": ["variable.other.enummember"],
-          "color300.version1": ["variable.parameter.function.swift","entity.name.function.swift"]
-        }
-      }
-    ]
-  }
-}
+https://github.com/shikijs/textmate-grammars-themes/tree/main/packages/tm-grammars/grammars
+
+For nested languages to work, ensure that you also include their grammars as well, for example HTML requires CSS and JS grammars since it can contain those languages inside style and script tags.
+
+Run this command to create a lsp-syntax-builder-config.js file:
+
+```
+npx lsp-syntax-highlighter-builder --init
 ```
 
-With the full list on the [capabilities page](./capabilities.md), return the following in your LSP's initialization response:
+Take a look at the lsp-syntax-builder-config.js file. You will see official configurations for a few languages. If your language is missing, you can still proceed, however the default settings will be used. If you are ultimately not happy with the quality of your highlighting you can add an entry for your language and try tweaking the settings to get better results.
 
-```json
-{
-  "capabilities": {
-    // ... any other capabilities
-    "semanticTokensProvider": {
-      "full": true,
-      "legend": {
-        "tokenTypes": [
-          "color1",
-          "color2",
-          "color3",
-          "color4",
-          "color5",
-          "color6",
-          "color7",
-          "color8",
-          "color9",
-          "color10",
-          "color11",
-          "color12",
-          "color13",
-          "color14",
-          //...
-          "color297",
-          "color298",
-          "color299",
-          "color300",
-        ],
-        "tokenModifiers": ["version123"], // Use the version number on the capabilities page
+Once you have all the grammars in the folder, you are ready to run the build command that will precalculate all the possible scopes that can be generated by the grammar:
+
+```
+npx lsp-syntax-highlighter-builder
+```
+
+Please be aware that in some cases this script can take 30-40 minutes to complete.
+
+The script creates two files:
+
+- `grammars/highlighter/database.json`
+- `contributes.json`
+
+The script will output the number of colors generated:
+
+```
+3345 colors generated
+```
+
+Take note of this number.
+
+The content of contributes.json needs to be copy pasted into your package.json, and then the file can be deleted.
+
+The lsp-syntax-builder-config.js file is no longer needed and can be deleted.
+
+In your LSP, you need to return the following for the 'initialization' request:
+
+```js
+const { getColorList } = require('lsp-syntax-highlighter')
+
+const initializeHandler = () => {
+  return {
+    capabilities: {
+      // ... 
+      semanticTokensProvider: {
+        legend: {
+          tokenTypes: getColorList(3345),
+          tokenModifiers: [],
+        },
+        full: true,
       },
     },
-  }
+    // ...
+  };
 }
 ```
+
+The exact format of the initializeHandler function will depend on your language server implementation.
+
+Replace 3345 with the number from the output above.
 
 Add a handler for `textDocument/semanticTokens/full`:
 
 ```js
-const Highlighter = require('lsp-syntax-highlighter')
+const { initializeHighlighter } = require('lsp-syntax-highlighter')
+const grammars = require('./grammars')
 
-const highlighterPromise = Highlighter({
-  languages: [
-    'js', // String referring to any language implemented in the Shiki library
-    myLangGrammar // TextMate Grammar Theme in JSON
-  ]
-})
+const highlighterPromise = await initializeHighlighter({ grammars })
 
-const myHandler = async (myTextDocument) => {
+const mySemanticTokenHandler = async (textDocument) => {
   const { highlight } = await highlighterPromise
 
-  const { encodedTokens } = highlight(myTextDocument, { language: 'js' })
+  const { encodedTokens, tokens } = highlight({ 
+    text: textDocument,
+    sections: [
+      { 
+        startOffset: 170,
+        endOffset: 349,
+        grammar: 'html',
+        replacements: [
+          { startOffset: 191, endOffset: 310, text: '""' }
+        ]
+      },
+    ]
+  })
+
+  console.log(tokens)
 
   return { data: encodedTokens }
 }
 ```
 
-## Highlighter Options
+The exact format of the handler function will depend on your language server implementation.
 
-- `languages`: Array of language strings or custom TextMate grammars in JSON. For custom TextMate grammars make sure to include nested languages as well.
+## API Documentation
 
-## Highlight Options
+### The `initializeHighlighter` Function
 
-- `language`: A string referring to the language of the provided text. Will be a string even for custom TextMate grammars.
-- `lineOffset`: Optional. The number of lines your code is down from the top of the document, zero-indexed.
-- `columnOffset`: Optional. The number of columns your code starts from the left, zero-indexed.
-
-## Methodology
-
-To build the conversion database, I took a list of all 2978 unique scopes used in the prominent textmate grammars and themes in the Shiki library, and used a kmedioids clustering algorithm called fasterPAM to map similar scope to 300 core scopes.
-
-## Advanced Usage
-
-### Cluster Database
-
-You can import the database which clusters the 2978 unique scopes into 300 semantic tokens:
+The top level function that asynchronously starts the highlighter and returns the highlight function.
 
 ```js
 const { 
-  fakeCssHexToSemanticToken, 
-  fakeScopeMatchingTheme
-} = require('textmate-grammar-to-semantic-tokens/database.json')
+  highlight // The main highlight function described below
+} = await initializeHighlighter({
+  grammars // An array of JSON grammars
+})
 ```
 
-Running this theme with a library like Shiki will produce a CSS Hex that maps to the semantic token.
+### The `highlight` Function
+The highlight function uses the same grammar tokenizer built into VSCode, and then highlights the text using the pregenerated database you created during the installation steps.
 
-### Building The Database From Scratch
+```js
+const { 
+  encodedTokens, // The series of numbers required by the LSP standard
+  tokens, // A human-readable list of tokens useful for debugging
+} = highlight({
+  text, // The full text of the document you are highlighting
+  sections, // The main highlighting config, described below
+})
+```
 
-See the dedicated guide: [./build-database/README.md](./build-database/README.md)
+### The `sections` Array
 
-### Using the Demo
+```js
+const sections = [{
+  startOffset, // A number referring to an index on the text document being highlighted
+  endOffset, // The end number
+  grammar, // The grammar name, which needs to match the name the grammar gives itself. This can be tricky, like CSS calls itself "css" but "js" calls itself "javascript". The name can be found at the top level of the grammar file.
+  replacements: [
+    // An array of alterations that you want to make to the text before sending it to the highlighter. Useful for priming the grammar into a specific state or removing string replacements like `my string with an ${insertion}` in JavaScript.
+    { 
+      startOffset: replacementStart, // An index number which needs to be within the text document
+      endOffset: replacementEnd, // The end number. Can be the same as the startOffset in the case that you want to add text without removing any.
+      text: replacementText, // Text to insert within the offsets. Can be an empty string if you simply want to remove text.
+    }
+  ]
+}]
+```
 
-You can spin up the same demo I used to confirm that the conversions are working. See the dedicated guide: [./demo/README.md](./demo/README.md)
+## Using the Demo
+
+You can spin up the same demo I used to confirm that the highlighting is working. See the dedicated guide: [./demo/README.md](./demo/README.md)
 
 ![Screenshot of demo environment](./demo/demo.png)

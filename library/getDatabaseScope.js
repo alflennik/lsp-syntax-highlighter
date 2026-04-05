@@ -1,11 +1,8 @@
-const initializeConverter = scopesByRank => {
+const initializeGetDatabaseScope = scopesByRank => {
   const databaseScopesByRank = scopesByRank
   const maximumRank = Number(Object.keys(databaseScopesByRank).pop())
 
-  const convertGrammarScopeToDatabaseScope = (
-    grammarScopeStack,
-    { diagnosticReturnAllMatches = false } = {},
-  ) => {
+  const getDatabaseScope = (grammarScopeStack, { diagnosticReturnAllMatches = false } = {}) => {
     let i = 0
     let rank = maximumRank
     let iterationCount = 0
@@ -42,7 +39,7 @@ const initializeConverter = scopesByRank => {
     return undefined
   }
 
-  return { convertGrammarScopeToDatabaseScope }
+  return { getDatabaseScope }
 }
 
 const matchScopeStacks = (grammarScopeStack, databaseScopeStack) => {
@@ -76,4 +73,4 @@ const matchSingleScope = (grammarScope, databaseScope) => {
   return true
 }
 
-module.exports = initializeConverter
+module.exports = initializeGetDatabaseScope
