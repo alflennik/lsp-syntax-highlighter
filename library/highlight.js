@@ -106,6 +106,8 @@ const initializeHighlighter = async ({ grammars } = {}) => {
         offset += 1 // make sure offset accounts for newlines
       }
 
+      if (!line) return
+
       const lineTokens = vsctmGrammar.tokenizeLine(line, vsctmContext)
 
       lineTokens.tokens.forEach(({ startIndex: columnIndex, endIndex: endColumnIndex, scopes }) => {

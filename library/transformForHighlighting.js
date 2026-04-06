@@ -30,12 +30,7 @@ const transformForHighlighting = ({ text, section }) => {
     section.replacements.forEach(replacement => {
       const { text: replacementText, startOffset, endOffset } = replacement
       const content = extract(characters, startOffset, endOffset)
-      parts.push({
-        type: "replacement",
-        originalOffset: startOffset,
-        content,
-        ...(replacementText && { replacementText }),
-      })
+      parts.push({ type: "replacement", originalOffset: startOffset, content, replacementText })
     })
   }
 
@@ -72,11 +67,9 @@ const transformForHighlighting = ({ text, section }) => {
 
     originalLineIndex = precedingNewlines
 
-    if (precedingNewlines) {
-      originalColumnIndex = precedingText.length - precedingText.lastIndexOf("\n") - 1
-    } else {
-      originalColumnIndex = precedingText.length
-    }
+    originalColumnIndex = precedingNewlines
+      ? precedingText.length - precedingText.lastIndexOf("\n") - 1
+      : precedingText.length
 
     for (let i = 0; i < parts.length; i += 1) {
       parts[i].originalLineIndex = originalLineIndex
@@ -86,9 +79,9 @@ const transformForHighlighting = ({ text, section }) => {
       const newlineCount = content.split("").filter(character => character === "\n").length
       originalLineIndex += newlineCount
 
-      if (newlineCount) {
-        originalColumnIndex = content.length - content.lastIndexOf("\n") - 1
-      }
+      originalColumnIndex = newlineCount
+        ? content.length - content.lastIndexOf("\n") - 1
+        : originalColumnIndex + content.length
     }
   })()
 
@@ -100,19 +93,23 @@ const transformForHighlighting = ({ text, section }) => {
     let contentToAdd
     if (type === "section") {
       contentToAdd = content
-    } else if (type === "replacement" && replacementText) {
+    } else if (type === "replacement") {
       contentToAdd = replacementText
     }
 
-    if (contentToAdd) {
+    if (contentToAdd !== undefined) {
       parts[i].transformedOffset = transformed.length
 
       transformed += contentToAdd
     }
   }
 
+  const partsInTransformedText = parts.filter(
+    part => part.type === "section" || part.replacementText,
+  )
+
   const convertIndexes = transformedOffset => {
-    const part = binarySearch(parts, candidate => {
+    const part = binarySearch(partsInTransformedText, candidate => {
       if (transformedOffset < candidate.transformedOffset) {
         return 1
       } else if (transformedOffset > candidate.transformedOffset) {
@@ -170,7 +167,7 @@ const extract = (array, startIndex, endIndex) => {
     characters.push(array[i])
     array[i] = undefined
   }
-  return characters.join()
+  return characters.join("")
 }
 
 module.exports = transformForHighlighting

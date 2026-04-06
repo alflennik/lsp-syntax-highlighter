@@ -61,7 +61,7 @@ const mySemanticTokenHandler = async (textDocument) => {
 
 ## Installation Guide
 
-You will need a working LSP implementation that works with VSCode or Cursor. There are some samples provided by VSCode, and I can recommend https://github.com/semanticart/lsp-from-scratch/.
+You will need a working LSP implementation integrated with VSCode or Cursor. There are some samples provided by VSCode, and I can recommend https://github.com/semanticart/lsp-from-scratch/.
 
 Install this package:
 
