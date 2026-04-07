@@ -1,8 +1,11 @@
-const initializeGetDatabaseScope = scopesByRank => {
-  const databaseScopesByRank = scopesByRank
-  const maximumRank = Number(Object.keys(databaseScopesByRank).pop())
-
+const initializeGetDatabaseScope = grammarScopesByRank => {
   const getDatabaseScope = (grammarScopeStack, { diagnosticReturnAllMatches = false } = {}) => {
+    const grammarName = grammarScopeStack[0]
+
+    const scopesByRank = grammarScopesByRank[grammarName]
+    if (!scopesByRank) return undefined
+    const maximumRank = Number(Object.keys(scopesByRank).pop())
+
     let i = 0
     let rank = maximumRank
     let iterationCount = 0
@@ -11,14 +14,14 @@ const initializeGetDatabaseScope = scopesByRank => {
       iterationCount += 1
       if (iterationCount > maxIterationCount) throw new Error("Max iteration count exceeded")
 
-      const currentRankContainsItems = !!databaseScopesByRank[rank]
+      const currentRankContainsItems = !!scopesByRank[rank]
       if (!currentRankContainsItems) {
         if (rank === 0) break
         rank -= 1
         continue
       }
 
-      const databaseScopeStack = databaseScopesByRank[rank][i]
+      const databaseScopeStack = scopesByRank[rank][i]
       const isMatch = matchScopeStacks(grammarScopeStack, databaseScopeStack.split(" "))
       if (isMatch) {
         if (!diagnosticReturnAllMatches) {
@@ -29,7 +32,7 @@ const initializeGetDatabaseScope = scopesByRank => {
       }
 
       i += 1
-      if (i === databaseScopesByRank[rank].length) {
+      if (i === scopesByRank[rank].length) {
         if (rank === 0) break // Failed to find even a single match
         rank -= 1
         i = 0

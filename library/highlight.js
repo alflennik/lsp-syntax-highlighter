@@ -13,10 +13,14 @@ const colorsToIndexes = Object.fromEntries(
   }),
 )
 
-const scopesByRank = {}
-Object.entries(database.primary).forEach(([scope, { rank }]) => {
-  if (!scopesByRank[rank]) scopesByRank[rank] = []
-  scopesByRank[rank].push(scope)
+const grammarScopesByRank = {}
+Object.entries(database).forEach(([grammarName, grammarScopes]) => {
+  grammarScopesByRank[grammarName] = {}
+
+  Object.entries(grammarScopes).forEach(([scope, { rank }]) => {
+    if (!grammarScopesByRank[grammarName][rank]) grammarScopesByRank[grammarName][rank] = []
+    grammarScopesByRank[grammarName][rank].push(scope)
+  })
 })
 
 const initializeHighlighter = async ({ grammars } = {}) => {
@@ -24,7 +28,7 @@ const initializeHighlighter = async ({ grammars } = {}) => {
     throw new Error("no grammars provided")
   }
 
-  const { getDatabaseScope } = initializeGetDatabaseScope(scopesByRank)
+  const { getDatabaseScope } = initializeGetDatabaseScope(grammarScopesByRank)
 
   // See https://www.npmjs.com/package/vscode-textmate
   const wasmBin = fs.readFileSync(
@@ -123,15 +127,14 @@ const initializeHighlighter = async ({ grammars } = {}) => {
     const tokens = []
 
     grammarTokens.forEach(({ offset, lineIndex, columnIndex, content, scopes }) => {
+      const grammarSelfName = scopes[0]
       const databaseScope = getDatabaseScope(scopes)
 
       let semanticToken
-      if (database.primary[databaseScope]) {
-        semanticToken = database.primary[databaseScope].semanticToken
-      } else if (database.secondary[databaseScope]) {
-        semanticToken = database.primary[database.secondary[databaseScope]].semanticToken
+      if (database[grammarSelfName][databaseScope]) {
+        semanticToken = database[grammarSelfName][databaseScope].semanticToken
       } else {
-        semanticToken = database.primary.default.semanticToken
+        semanticToken = "color0"
       }
 
       tokens.push({ offset, lineIndex, columnIndex, content, semanticToken })

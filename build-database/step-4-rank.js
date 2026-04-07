@@ -1,103 +1,78 @@
 const sqlite3 = require("sqlite3").verbose()
 const path = require("path")
 const fs = require("fs/promises")
-const packageJson = require("../package.json")
-const Converter = require("../library/getDatabaseScope")
+const initializeGetDatabaseScope = require("../library/getDatabaseScope")
 
 const step4 = async () => {
-  const currentMajorVersion = parseInt(packageJson.version.match(/^\d+/)[0])
-  const versionNumber = currentMajorVersion + 1
-
   const scopes = await query(`
-    SELECT s1.*, s2.name AS cluster_scope_name
-    FROM scopes s1
-    INNER JOIN scopes s2 ON s1.cluster_scope_id = s2.id
+    SELECT *, original_scope_stack AS "originalScopeStack" FROM scopes 
+    -- TODO: get rid of these by filtering earlier in the pipeline
+    WHERE name != 'default' AND name LIKE '% %'
   `)
 
-  const primaryScopeNames = []
-  const originalScopeStackByScopeName = {}
+  let ranksByScopeName = Object.fromEntries(scopes.map(({ name }) => [name, 0]))
 
-  scopes.forEach(({ name, original_scope_stack, cluster_scope_name }) => {
-    if (cluster_scope_name !== name) return
-
-    primaryScopeNames.push(name)
-    originalScopeStackByScopeName[name] = original_scope_stack
-  })
-
-  let ranksByPrimaryScopeName = Object.fromEntries(
-    primaryScopeNames.map(scopeName => [scopeName, 0]),
-  )
-
-  let maximumRank = 8
+  let maximumRank = 12
 
   for (let i = 0; i < maximumRank; i += 1) {
     const scopesByRank = {}
-    Object.entries(ranksByPrimaryScopeName).forEach(([scopeName, rank]) => {
+    Object.entries(ranksByScopeName).forEach(([scopeName, rank]) => {
       if (!scopesByRank[rank]) {
         scopesByRank[rank] = []
       }
       scopesByRank[rank].push(scopeName)
     })
 
-    const convertGrammarScopeToDatabaseScope = Converter(scopesByRank)
+    const { getDatabaseScope } = initializeGetDatabaseScope(scopesByRank)
 
     console.log("Pass", i + 1, "of", maximumRank)
-    primaryScopeNames.forEach((scopeName, index) => {
-      if (index % 1000 === 0) console.info("ranking", index, "of", primaryScopeNames.length)
+    scopes.forEach(({ name: scopeName, originalScopeStack }, index) => {
+      if (index % 1000 === 0) console.info("ranking", index, "of", scopes.length)
 
-      const originalScopeStack = originalScopeStackByScopeName[scopeName]
       if (!originalScopeStack) return
-      const matchedScope = convertGrammarScopeToDatabaseScope(originalScopeStack.split(" "))
-      if (matchedScope !== scopeName) ranksByPrimaryScopeName[scopeName] += 1
+
+      const matchedScope = getDatabaseScope(originalScopeStack.split(" "))
+      if (matchedScope !== scopeName) ranksByScopeName[scopeName] += 1
     })
   }
 
-  const primaryScopeToScopes = {}
-
-  scopes.forEach(scope => {
-    if (!primaryScopeToScopes[scope.cluster_scope_name]) {
-      primaryScopeToScopes[scope.cluster_scope_name] = []
-    }
-
-    if (scope.cluster_scope_name === scope.name) return
-
-    primaryScopeToScopes[scope.cluster_scope_name].push(scope.name)
-  })
-
-  const database = { primary: {}, secondary: {} }
+  const database = {}
 
   const semanticTokenMappings = {}
 
-  Object.entries(primaryScopeToScopes).forEach(([primaryScopeName, secondaryScopeNames], index) => {
-    const color = `color${index + 1}`
-    const colorVersion = `color${index + 1}.version${versionNumber}`
+  scopes.forEach(({ name: scopeName }, index) => {
+    const color = `color${index}`
 
-    const rank = ranksByPrimaryScopeName[primaryScopeName]
+    const rank = ranksByScopeName[scopeName]
 
-    semanticTokenMappings[colorVersion] = [primaryScopeName]
+    semanticTokenMappings[color] = [scopeName]
 
-    database.primary[primaryScopeName] = { semanticToken: color, rank }
-    secondaryScopeNames.forEach(secondaryScopeName => {
-      database.secondary[secondaryScopeName] = primaryScopeName
-    })
+    const firstSpace = scopeName.indexOf(" ")
+    const grammarName = scopeName.slice(0, firstSpace)
+    const scopeNameRemaining = scopeName.slice(firstSpace + 1)
+
+    if (!database[grammarName]) {
+      database[grammarName] = {}
+    }
+
+    database[grammarName][scopeNameRemaining] = { semanticToken: color, rank }
   })
 
-  const contributes = {
-    configurationDefaults: { "editor.semanticHighlighting.enabled": true },
-    semanticTokenScopes: [{ scopes: semanticTokenMappings }],
-  }
+  const contributes = `{
+    "configurationDefaults": { "editor.semanticHighlighting.enabled": true },
+    "semanticTokenScopes": [{ "scopes": 
+      ${JSON.stringify(semanticTokenMappings)}
+    }],
+  }`
 
   const colors = []
-  for (let i = 1; i <= Object.keys(primaryScopeToScopes).length; i += 1) {
+  for (let i = 1; i <= scopes.length; i += 1) {
     colors.push(`color${i}`)
   }
 
   const capabilities = {
     textDocumentSync: 1,
-    semanticTokensProvider: {
-      full: true,
-      legend: { tokenModifiers: [`version${versionNumber}`], tokenTypes: colors },
-    },
+    semanticTokensProvider: { full: true, legend: { tokenModifiers: [], tokenTypes: colors } },
   }
 
   const contributesMd = `<!-- AUTOGENERATED FILE! EDIT IN build-database/step-4-finalize.js -->
@@ -106,7 +81,7 @@ const step4 = async () => {
 Please add the following to the "contributes" section in your extension's package.json:
 
 \`\`\`json
-${JSON.stringify(contributes, null, 2)}
+${contributes}
 \`\`\`
 `
 

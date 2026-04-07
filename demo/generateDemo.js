@@ -1,5 +1,5 @@
 const { createScopeNameToColor } = require("../build-database/utilities")
-const Highlighter = require("../index")
+const initializeHighlighter = require("../index")
 const fs = require("fs/promises")
 const path = require("path")
 const database = require("../database.json")
@@ -93,7 +93,7 @@ const generateDemo = async () => {
     langs: Object.keys(bundledLanguages),
   })
 
-  const { highlight } = await Highlighter({ languages: Object.values(allGrammars) })
+  const { highlight } = await initializeHighlighter({ grammars: Object.values(allGrammars) })
 
   const results = {}
 
@@ -130,7 +130,10 @@ const generateDemo = async () => {
       const start2 = performance.now()
 
       const tokens2 = []
-      const { tokens: semanticTokens } = highlight(code, { language: languageName })
+      const { tokens: semanticTokens } = highlight({
+        text: code,
+        sections: [{ startOffset: 0, endOffset: code.length, grammar: languageName }],
+      })
 
       let currentLine = []
       let currentLineIndex = 0
@@ -147,7 +150,7 @@ const generateDemo = async () => {
         const content = lines[lineIndex].slice(columnIndex, columnIndex + length)
 
         const { color, fontStyle } = (() => {
-          const scopeName = databaseFlipped[semanticToken]
+          const scopeName = databaseSemanticTokenToScope[semanticToken]
           const colorSettingsString = scopeNameToColor({ scopeName, themeName })
           const colorSettings = JSON.parse(colorSettingsString)
           return { color: colorSettings.color, fontStyle: getFontStyle(colorSettings.fontStyle) }
@@ -186,8 +189,11 @@ const getFontStyle = number => {
   if (number === 8) return "strikethrough"
 }
 
-const databaseFlipped = Object.fromEntries(
-  Object.entries(database.primary).map(([scope, { semanticToken }]) => [semanticToken, scope]),
-)
+const databaseSemanticTokenToScope = {}
+Object.entries(database).forEach(([grammarName, grammarScopes]) => {
+  Object.entries(grammarScopes).forEach(([scope, { semanticToken }]) => {
+    databaseSemanticTokenToScope[semanticToken] = scope
+  })
+})
 
 generateDemo()

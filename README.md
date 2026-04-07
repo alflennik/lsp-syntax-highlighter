@@ -117,6 +117,7 @@ const initializeHandler = () => {
   return {
     capabilities: {
       // ... 
+      textDocumentSync: 1,
       semanticTokensProvider: {
         legend: {
           tokenTypes: getColorList(3345),
