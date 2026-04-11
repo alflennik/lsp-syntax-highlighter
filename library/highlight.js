@@ -58,6 +58,10 @@ const initializeHighlighter = async ({ grammars } = {}) => {
     vsctmGrammars[grammar.name] = await registry.loadGrammar(grammar.scopeName)
   }
 
+  const { getNestedGrammar } = initializeGetNestedGrammar(
+    grammars.map(grammar => grammar.scopeName),
+  )
+
   const highlight = ({ text, sections }) => {
     const tokens = []
 
@@ -126,8 +130,9 @@ const initializeHighlighter = async ({ grammars } = {}) => {
 
     const tokens = []
 
-    grammarTokens.forEach(({ offset, lineIndex, columnIndex, content, scopes }) => {
-      const grammarSelfName = scopes[0]
+    grammarTokens.forEach(({ offset, lineIndex, columnIndex, content, scopes: scopesRaw }) => {
+      const [grammarSelfName, scopes] = getNestedGrammar(scopesRaw)
+
       const databaseScope = getDatabaseScope(scopes)
 
       let semanticToken
@@ -144,6 +149,24 @@ const initializeHighlighter = async ({ grammars } = {}) => {
   }
 
   return { highlight }
+}
+
+const initializeGetNestedGrammar = grammarScopeNames => {
+  const getNestedGrammar = grammarScopeStackRaw => {
+    const grammarNameAt =
+      grammarScopeStackRaw
+        .toReversed() // Nested languages first
+        .findIndex(scopeName => grammarScopeNames.includes(scopeName)) + 1
+
+    const grammarName = grammarScopeStackRaw.at(-grammarNameAt)
+
+    // With nested languages disregard the wrapping language scopes
+    const grammarScopeStack = grammarScopeStackRaw.slice(-grammarNameAt)
+
+    return [grammarName, grammarScopeStack]
+  }
+
+  return { getNestedGrammar }
 }
 
 const encodeTokens = tokens => {
