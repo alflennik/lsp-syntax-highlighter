@@ -15,8 +15,8 @@ const generateDemo = async () => {
     Object.entries(bundledLanguagesRaw).filter(([name]) => {
       // prettier-ignore
       return [
-        "javascript",
         "json",
+        "javascript",
         "html",
         "sql",
         "markdown",
@@ -135,31 +135,23 @@ const generateDemo = async () => {
         sections: [{ startOffset: 0, endOffset: code.length, grammar: languageName }],
       })
 
-      let currentLine = []
-      let currentLineIndex = 0
-
-      const lines = code.split("\n")
-
-      semanticTokens.forEach(({ lineIndex, columnIndex, length, semanticToken }) => {
-        if (currentLineIndex < lineIndex) {
-          currentLineIndex += 1
-          tokens2.push(currentLine)
-          currentLine = []
-        }
-
-        const content = lines[lineIndex].slice(columnIndex, columnIndex + length)
-
+      semanticTokens.forEach(({ lineIndex, columnIndex, content, semanticToken }) => {
         const { color, fontStyle } = (() => {
-          const scopeName = databaseSemanticTokenToScope[semanticToken]
+          const { scopeNameRemaining, grammarName } = semanticTokenLookups[semanticToken]
+          const scopeName = `${grammarName} ${scopeNameRemaining}`
           const colorSettingsString = scopeNameToColor({ scopeName, themeName })
           const colorSettings = JSON.parse(colorSettingsString)
           return { color: colorSettings.color, fontStyle: getFontStyle(colorSettings.fontStyle) }
         })()
 
-        currentLine.push({ content, columnIndex, color, fontStyle })
+        if (!tokens2[lineIndex]) tokens2[lineIndex] = []
+
+        tokens2[lineIndex].push({ content, columnIndex, color, fontStyle })
       })
 
-      tokens2.push(currentLine)
+      for (let i = 0; i < tokens2.length; i += 1) {
+        if (!tokens2[i]) tokens2[i] = []
+      }
 
       results[languageName][themeName].semantic = tokens2
       const duration2 = performance.now() - start2
@@ -189,10 +181,10 @@ const getFontStyle = number => {
   if (number === 8) return "strikethrough"
 }
 
-const databaseSemanticTokenToScope = {}
+const semanticTokenLookups = {}
 Object.entries(database).forEach(([grammarName, grammarScopes]) => {
-  Object.entries(grammarScopes).forEach(([scope, { semanticToken }]) => {
-    databaseSemanticTokenToScope[semanticToken] = scope
+  Object.entries(grammarScopes).forEach(([scopeNameRemaining, { semanticToken }]) => {
+    semanticTokenLookups[semanticToken] = { grammarName, scopeNameRemaining }
   })
 })
 

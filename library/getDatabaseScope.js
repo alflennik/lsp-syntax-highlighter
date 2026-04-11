@@ -3,7 +3,7 @@ const initializeGetDatabaseScope = grammarScopesByRank => {
     const grammarName = grammarScopeStack[0]
 
     const scopesByRank = grammarScopesByRank[grammarName]
-    if (!scopesByRank) return undefined
+    if (!scopesByRank) return "default"
     const maximumRank = Number(Object.keys(scopesByRank).pop())
 
     let i = 0
@@ -39,7 +39,7 @@ const initializeGetDatabaseScope = grammarScopesByRank => {
         continue // No matches in this rank, try the next one down
       }
     }
-    return undefined
+    return "default"
   }
 
   return { getDatabaseScope }

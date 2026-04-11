@@ -7,55 +7,73 @@ const step4 = async () => {
   const scopes = await query(`
     SELECT *, original_scope_stack AS "originalScopeStack" FROM scopes 
     -- TODO: get rid of these by filtering earlier in the pipeline
-    WHERE name != 'default' AND name LIKE '% %'
+    -- Names without spaces are "source.js" or "source.css" which are not useful
+    -- TODO: get rid of "default" in the DB as well
+    WHERE name LIKE '% %' 
   `)
 
-  let ranksByScopeName = Object.fromEntries(scopes.map(({ name }) => [name, 0]))
+  const grammarRanksByScopeName = {}
+  scopes.forEach(({ name: scopeName }) => {
+    const firstSpace = scopeName.indexOf(" ")
+    const grammarName = scopeName.slice(0, firstSpace)
+    const scopeNameRemaining = scopeName.slice(firstSpace + 1)
 
-  let maximumRank = 12
+    if (!grammarRanksByScopeName[grammarName]) {
+      grammarRanksByScopeName[grammarName] = {}
+    }
+    grammarRanksByScopeName[grammarName][scopeNameRemaining] = 0
+  })
+
+  const maximumRank = 12
 
   for (let i = 0; i < maximumRank; i += 1) {
-    const scopesByRank = {}
-    Object.entries(ranksByScopeName).forEach(([scopeName, rank]) => {
-      if (!scopesByRank[rank]) {
-        scopesByRank[rank] = []
-      }
-      scopesByRank[rank].push(scopeName)
+    const grammarScopesByRank = {}
+    Object.entries(grammarRanksByScopeName).forEach(([grammarName, ranksByScopeName]) => {
+      Object.entries(ranksByScopeName).forEach(([scopeName, rank]) => {
+        if (!grammarScopesByRank[grammarName]) {
+          grammarScopesByRank[grammarName] = {}
+        }
+        if (!grammarScopesByRank[grammarName][rank]) {
+          grammarScopesByRank[grammarName][rank] = []
+        }
+        grammarScopesByRank[grammarName][rank].push(scopeName)
+      })
     })
 
-    const { getDatabaseScope } = initializeGetDatabaseScope(scopesByRank)
+    const { getDatabaseScope } = initializeGetDatabaseScope(grammarScopesByRank)
 
     console.log("Pass", i + 1, "of", maximumRank)
     scopes.forEach(({ name: scopeName, originalScopeStack }, index) => {
       if (index % 1000 === 0) console.info("ranking", index, "of", scopes.length)
 
-      if (!originalScopeStack) return
+      const firstSpace = scopeName.indexOf(" ")
+      const grammarName = scopeName.slice(0, firstSpace)
+      const scopeNameRemaining = scopeName.slice(firstSpace + 1)
 
       const matchedScope = getDatabaseScope(originalScopeStack.split(" "))
-      if (matchedScope !== scopeName) ranksByScopeName[scopeName] += 1
+      if (matchedScope !== scopeName) {
+        grammarRanksByScopeName[grammarName][scopeNameRemaining] += 1
+      }
     })
   }
 
   const database = {}
 
-  const semanticTokenMappings = {}
+  const semanticTokenMappings = { color0: ["default"] }
 
-  scopes.forEach(({ name: scopeName }, index) => {
-    const color = `color${index}`
+  Object.keys(grammarRanksByScopeName).forEach(grammarName => {
+    database[grammarName] = {}
+    database[grammarName].default = { semanticToken: "color0", rank: 0 }
+  })
 
-    const rank = ranksByScopeName[scopeName]
-
-    semanticTokenMappings[color] = [scopeName]
-
-    const firstSpace = scopeName.indexOf(" ")
-    const grammarName = scopeName.slice(0, firstSpace)
-    const scopeNameRemaining = scopeName.slice(firstSpace + 1)
-
-    if (!database[grammarName]) {
-      database[grammarName] = {}
-    }
-
-    database[grammarName][scopeNameRemaining] = { semanticToken: color, rank }
+  let currentColorNumber = 1
+  Object.entries(grammarRanksByScopeName).forEach(([grammarName, ranksByScopeName]) => {
+    Object.entries(ranksByScopeName).forEach(([scopeNameRemaining, rank]) => {
+      const color = `color${currentColorNumber}`
+      semanticTokenMappings[color] = [`${grammarName} ${scopeNameRemaining}`]
+      database[grammarName][scopeNameRemaining] = { semanticToken: color, rank }
+      currentColorNumber += 1
+    })
   })
 
   const contributes = `{
@@ -66,7 +84,7 @@ const step4 = async () => {
   }`
 
   const colors = []
-  for (let i = 1; i <= scopes.length; i += 1) {
+  for (let i = 0; i < scopes.length + 1 /* 1 is for default */; i += 1) {
     colors.push(`color${i}`)
   }
 
