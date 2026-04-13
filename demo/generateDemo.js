@@ -75,7 +75,7 @@ const generateDemo = async () => {
 
   names = names.filter(name => allGrammars[name]).sort((a, b) => a.localeCompare(b))
 
-  const samples = {}
+  let samples = {}
 
   await Promise.all(
     names.map(async name => {
@@ -87,6 +87,8 @@ const generateDemo = async () => {
       }
     }),
   )
+
+  samples = Object.fromEntries(Object.entries(samples).sort((a, b) => a[0].localeCompare(b[0])))
 
   const highlighter = await createHighlighter({
     themes: Object.keys(bundledThemes),

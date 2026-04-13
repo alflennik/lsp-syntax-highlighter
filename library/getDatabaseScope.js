@@ -1,4 +1,6 @@
 const initializeGetDatabaseScope = grammarScopesByRank => {
+  const cache = new Cache(50_000)
+
   const getDatabaseScope = (grammarScopeStack, { diagnosticReturnAllMatches = false } = {}) => {
     const grammarName = grammarScopeStack[0]
 
@@ -42,7 +44,19 @@ const initializeGetDatabaseScope = grammarScopesByRank => {
     return "default"
   }
 
-  return { getDatabaseScope }
+  const getDatabaseScopeCached = (...args) => {
+    const grammarScopeStack = args[0]
+    const key = grammarScopeStack.join(" ")
+
+    const cachedResult = cache.get(key)
+    if (cachedResult) return cachedResult
+
+    const result = getDatabaseScope(...args)
+    cache.set(key, result)
+    return result
+  }
+
+  return { getDatabaseScope: getDatabaseScopeCached }
 }
 
 const matchScopeStacks = (grammarScopeStack, databaseScopeStack) => {
@@ -74,6 +88,36 @@ const matchSingleScope = (grammarScope, databaseScope) => {
     if (databaseScopeSegments[i] !== grammarScopeSegments[i]) return false
   }
   return true
+}
+
+// https://stackoverflow.com/questions/996505/lru-cache-implementation-in-javascript
+class Cache {
+  constructor(max) {
+    this.max = max
+    this.cache = new Map()
+  }
+
+  get(key) {
+    let item = this.cache.get(key)
+    if (item !== undefined) {
+      // refresh key
+      this.cache.delete(key)
+      this.cache.set(key, item)
+    }
+    return item
+  }
+
+  set(key, val) {
+    // refresh key
+    if (this.cache.has(key)) this.cache.delete(key)
+    // evict oldest
+    else if (this.cache.size === this.max) this.cache.delete(this.first())
+    this.cache.set(key, val)
+  }
+
+  first() {
+    return this.cache.keys().next().value
+  }
 }
 
 module.exports = initializeGetDatabaseScope
