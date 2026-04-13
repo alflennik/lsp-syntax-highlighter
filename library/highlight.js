@@ -204,8 +204,6 @@ const convertIntegerArrayToBitmask = indexes => {
   return bitmask
 }
 
-// const convertCssHexToNumber = hex => parseInt(hex.replace("#", ""))
-
 const tokenModifiersEncoded = convertIntegerArrayToBitmask([0])
 
 module.exports = initializeHighlighter

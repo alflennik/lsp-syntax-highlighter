@@ -51,7 +51,7 @@ const step4 = async () => {
       const scopeNameRemaining = scopeName.slice(firstSpace + 1)
 
       const matchedScope = getDatabaseScope(originalScopeStack.split(" "))
-      if (matchedScope !== scopeName) {
+      if (matchedScope !== scopeNameRemaining) {
         grammarRanksByScopeName[grammarName][scopeNameRemaining] += 1
       }
     })

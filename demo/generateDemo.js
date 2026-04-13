@@ -138,9 +138,10 @@ const generateDemo = async () => {
       })
 
       semanticTokens.forEach(({ lineIndex, columnIndex, content, semanticToken }) => {
+        const { scopeNameRemaining, grammarName } = semanticTokenLookups[semanticToken]
+        const scopeName = `${grammarName} ${scopeNameRemaining}`
+
         const { color, fontStyle } = (() => {
-          const { scopeNameRemaining, grammarName } = semanticTokenLookups[semanticToken]
-          const scopeName = `${grammarName} ${scopeNameRemaining}`
           const colorSettingsString = scopeNameToColor({ scopeName, themeName })
           const colorSettings = JSON.parse(colorSettingsString)
           return { color: colorSettings.color, fontStyle: getFontStyle(colorSettings.fontStyle) }
@@ -148,7 +149,14 @@ const generateDemo = async () => {
 
         if (!tokens2[lineIndex]) tokens2[lineIndex] = []
 
-        tokens2[lineIndex].push({ content, columnIndex, color, fontStyle })
+        tokens2[lineIndex].push({
+          content,
+          columnIndex,
+          color,
+          fontStyle,
+          // scopeName, // for debugging
+          // semanticToken, // for debugging
+        })
       })
 
       for (let i = 0; i < tokens2.length; i += 1) {
