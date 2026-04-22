@@ -1,4 +1,4 @@
-const { createScopeNameToColor } = require("../build-database/utilities")
+const { createScopeNameToColor } = require("../compiler/analyzer/utilities")
 const initializeHighlighter = require("../index")
 const fs = require("fs/promises")
 const path = require("path")

@@ -1,7 +1,7 @@
 const sqlite3 = require("sqlite3").verbose()
 const path = require("path")
 const fs = require("fs/promises")
-const initializeGetDatabaseScope = require("../library/getDatabaseScope")
+const initializeGetDatabaseScope = require("../../library/getDatabaseScope")
 
 const step4 = async () => {
   const scopes = await query(`
