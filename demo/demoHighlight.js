@@ -4,7 +4,7 @@ const fs = require("fs/promises")
 const path = require("path")
 const database = require("../database.json")
 
-const generateDemo = async () => {
+const initializeDemoHighlight = async () => {
   const {
     createHighlighter,
     bundledLanguages: bundledLanguagesRaw,
@@ -97,77 +97,81 @@ const generateDemo = async () => {
 
   const { highlight } = await initializeHighlighter({ grammars: Object.values(allGrammars) })
 
-  const results = {}
+  const demoHighlight = ({ themeName, grammarName }) => {
+    const sample = samples[grammarName]
+    const theme = allThemes[themeName]
+    const grammar = allGrammars[grammarName]
 
-  Object.entries(samples).map(([languageName, code]) => {
-    console.log(`Highlighting ${languageName} sample`)
-    results[languageName] = {}
+    if (!sample) throw new Error("No matching sample found")
+    if (!theme) throw new Error("Theme not found")
+    if (!grammar) throw new Error("Grammar not found")
 
-    const grammar = allGrammars[languageName]
-    Object.entries(allThemes).forEach(([themeName, theme]) => {
-      const start1 = performance.now()
-      const { tokens: textmateLines } = highlighter.codeToTokens(code, {
-        lang: grammar.name,
-        theme,
-      })
+    console.info(`Highlighting ${grammarName} sample`)
 
-      results[languageName][themeName] = {}
+    const results = {}
 
-      let lastOffset = 0
-      const tokens = textmateLines.map(textmateTokens => {
-        let columnOffset = lastOffset
-        return textmateTokens.map(textmateToken => {
-          lastOffset = textmateToken.offset + textmateToken.content.length + 1 // + 1 for newlines
-          return {
-            content: textmateToken.content,
-            columnIndex: textmateToken.offset - columnOffset,
-            color: textmateToken.color,
-            fontStyle: getFontStyle(textmateToken.fontStyle),
-          }
-        })
-      })
-
-      results[languageName][themeName].textmate = tokens
-      const duration1 = performance.now() - start1
-      const start2 = performance.now()
-
-      const tokens2 = []
-      const { tokens: semanticTokens } = highlight({
-        text: code,
-        sections: [{ startOffset: 0, endOffset: code.length, grammar: languageName }],
-      })
-
-      semanticTokens.forEach(({ lineIndex, columnIndex, content, semanticToken }) => {
-        const { scopeNameRemaining, grammarName } = semanticTokenLookups[semanticToken]
-        const scopeName = `${grammarName} ${scopeNameRemaining}`
-
-        const { color, fontStyle } = (() => {
-          const colorSettingsString = scopeNameToColor({ scopeName, themeName })
-          const colorSettings = JSON.parse(colorSettingsString)
-          return { color: colorSettings.color, fontStyle: getFontStyle(colorSettings.fontStyle) }
-        })()
-
-        if (!tokens2[lineIndex]) tokens2[lineIndex] = []
-
-        tokens2[lineIndex].push({
-          content,
-          columnIndex,
-          color,
-          fontStyle,
-          // scopeName, // for debugging
-          // semanticToken, // for debugging
-        })
-      })
-
-      for (let i = 0; i < tokens2.length; i += 1) {
-        if (!tokens2[i]) tokens2[i] = []
-      }
-
-      results[languageName][themeName].semantic = tokens2
-      const duration2 = performance.now() - start2
-      console.log("textmate", duration1.toFixed(3), "semantic", duration2.toFixed(3))
+    const start1 = performance.now()
+    const { tokens: textmateLines } = highlighter.codeToTokens(sample, {
+      lang: grammar.name,
+      theme,
     })
-  })
+
+    let lastOffset = 0
+    const tokens = textmateLines.map(textmateTokens => {
+      let columnOffset = lastOffset
+      return textmateTokens.map(textmateToken => {
+        lastOffset = textmateToken.offset + textmateToken.content.length + 1 // + 1 for newlines
+        return {
+          content: textmateToken.content,
+          columnIndex: textmateToken.offset - columnOffset,
+          color: textmateToken.color,
+          fontStyle: getFontStyle(textmateToken.fontStyle),
+        }
+      })
+    })
+
+    results.textmate = tokens
+    const duration1 = performance.now() - start1
+    const start2 = performance.now()
+
+    const tokens2 = []
+    const { tokens: semanticTokens } = highlight({
+      text: sample,
+      sections: [{ startOffset: 0, endOffset: sample.length, grammar: grammarName }],
+    })
+
+    semanticTokens.forEach(({ lineIndex, columnIndex, content, semanticToken }) => {
+      const { scopeNameRemaining, grammarName } = semanticTokenLookups[semanticToken]
+      const scopeName = `${grammarName} ${scopeNameRemaining}`
+
+      const { color, fontStyle } = (() => {
+        const colorSettingsString = scopeNameToColor({ scopeName, themeName })
+        const colorSettings = JSON.parse(colorSettingsString)
+        return { color: colorSettings.color, fontStyle: getFontStyle(colorSettings.fontStyle) }
+      })()
+
+      if (!tokens2[lineIndex]) tokens2[lineIndex] = []
+
+      tokens2[lineIndex].push({
+        content,
+        columnIndex,
+        color,
+        fontStyle,
+        // scopeName, // for debugging
+        // semanticToken, // for debugging
+      })
+    })
+
+    for (let i = 0; i < tokens2.length; i += 1) {
+      if (!tokens2[i]) tokens2[i] = []
+    }
+
+    results.semantic = tokens2
+    const duration2 = performance.now() - start2
+    console.info("textmate", duration1.toFixed(3), "semantic", duration2.toFixed(3))
+
+    return results
+  }
 
   const backgroundColors = Object.fromEntries(
     Object.entries(allThemes).map(([themeName, theme]) => {
@@ -175,11 +179,10 @@ const generateDemo = async () => {
     }),
   )
 
-  await fs.writeFile(
-    path.resolve(__dirname, "./results.json"),
-    JSON.stringify({ results, backgroundColors }, null, 2),
-    { encoding: "utf8" },
-  )
+  const themeNames = Object.keys(allThemes)
+  const grammarNames = Object.keys(allGrammars)
+
+  return { demoHighlight, backgroundColors, themeNames, grammarNames }
 }
 
 const getFontStyle = number => {
@@ -198,4 +201,4 @@ Object.entries(database).forEach(([grammarName, grammarScopes]) => {
   })
 })
 
-generateDemo()
+module.exports = initializeDemoHighlight

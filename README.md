@@ -2,7 +2,7 @@
 
 Add syntax highlighting to your language server, officially compatible with VSCode and Cursor.
 
-**⚠️ Important Limitations**: The languages grammars you support must be packaged into your extension and cannot be dynamically loaded, and VSCode may experience poor performance if you include more than 2-3 complex languages (like JavaScript or Python), or 6-7 small languages (like JSON, HTML or CSS).
+Note that the languages grammars you support must be packaged into your extension and cannot be dynamically loaded. Due to VSCode's architecture (not a limitation caused by this library) users will experience poor performance if you include too many languages in your extension (works best with less than 5-10 grammars).
 
 ## Usage
 

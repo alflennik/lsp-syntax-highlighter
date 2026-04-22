@@ -96,23 +96,21 @@
   <body>
     <script type="module">
       const load = async () => {
-        let results
+        let themeNames
+        let grammarNames
         let backgroundColors
-        // let languageAliasToName
-        // let samples
         try {
-          const resultsResponse = await fetch("results.json")
-          ;({ results, backgroundColors } = await resultsResponse.json())
-
-          // const samplesResponse = await fetch('samples.json')
-          // ;[languageAliasToName, samples] = await samplesResponse.json()
+          const metadataResponse = await fetch("http://localhost:1233/metadata")
+          ;({
+            data: { themeNames, grammarNames, backgroundColors },
+          } = await metadataResponse.json())
         } catch (error) {
           document.body.insertAdjacentHTML(
             "afterbegin",
             `
             <div class="demo-warning-container">
               <div class="demo-warning">
-                From the demo folder, please run <code>\`node generateDemo.js\`</code> and refresh.
+                From the demo folder, please run <code>\`node --watch server.js\`</code> and refresh.
               </div>
             </div>
           `,
@@ -120,14 +118,10 @@
           return
         }
 
-        const allLanguageNames = Object.keys(results)
-        const allThemeNames = Object.keys(backgroundColors)
-
-        const urlParams = /theme=(.+)&language=(.+)/.exec(location.hash)
+        const urlParams = /themeName=(.+)&grammarName=(.+)/.exec(location.hash)
 
         const defaultThemeName = urlParams?.[1] || "one-dark-pro"
-        let defaultLanguageName = urlParams?.[2] || "json"
-        if (!results[defaultLanguageName]) defaultLanguageName = Object.keys(results)[0]
+        let defaultGrammarName = urlParams?.[2] || "json"
 
         document.body.insertAdjacentHTML(
           "afterbegin",
@@ -135,7 +129,7 @@
           <div class="label-container">
             <label for="theme">Theme</label>
             <select id="theme">
-              ${allThemeNames.map(
+              ${themeNames.map(
                 themeName =>
                   `<option 
                     ${themeName === defaultThemeName ? 'selected="true"' : ""}
@@ -145,15 +139,15 @@
                   </option>`,
               )}
             </select>
-            <label for="language">Language</label>
-            <select id="language">
-              ${allLanguageNames.map(
-                languageName =>
+            <label for="grammar">Grammar</label>
+            <select id="grammar">
+              ${grammarNames.map(
+                grammarName =>
                   `<option 
-                    ${languageName === defaultLanguageName ? 'selected="true"' : ""}
-                    value="${languageName}"
+                    ${grammarName === defaultGrammarName ? 'selected="true"' : ""}
+                    value="${grammarName}"
                   >
-                    ${languageName}
+                    ${grammarName}
                   </option>`,
               )}
             </select>
@@ -176,12 +170,12 @@
         )
 
         // const highlighter = await createHighlighter({
-        //   themes: [...allThemeNames, ...Object.values(semanticThemes)],
-        //   langs: allLanguageNames
+        //   themes: [...themeNames, ...Object.values(semanticThemes)],
+        //   langs: grammarNames
         // })
 
         let themeName = defaultThemeName
-        let languageName = defaultLanguageName
+        let grammarName = defaultGrammarName
 
         const getText = result => {
           return result
@@ -201,8 +195,11 @@
         }
 
         const refreshHighlighting = async () => {
-          // let sample = samples[languageAliasToName[languageName]]
-          let result = results[languageName][themeName]
+          const rawResponse = await fetch(
+            `http://localhost:1233/highlight?themeName=${themeName}&grammarName=${grammarName}`,
+          )
+          const response = await rawResponse.json()
+          const result = response.data
 
           const highlightingTextmate = document.querySelector(".highlighting-textmate")
 
@@ -213,7 +210,7 @@
           highlightingSemantic.innerHTML = getText(result.semantic)
           highlightingSemantic.style.backgroundColor = backgroundColors[themeName]
 
-          location.hash = `theme=${themeName}&language=${languageName}`
+          location.hash = `themeName=${themeName}&grammarName=${grammarName}`
         }
 
         refreshHighlighting()
@@ -223,14 +220,14 @@
           refreshHighlighting()
         })
 
-        document.querySelector("#language").addEventListener("change", event => {
-          languageName = event.target.value
+        document.querySelector("#grammar").addEventListener("change", event => {
+          grammarName = event.target.value
           refreshHighlighting()
         })
 
         const refreshDropdowns = () => {
           document.querySelector(`#theme [value="${themeName}"]`).selected = true
-          document.querySelector(`#language [value="${languageName}"]`).selected = true
+          document.querySelector(`#grammar [value="${grammarName}"]`).selected = true
         }
 
         document.addEventListener("keydown", event => {
@@ -241,44 +238,44 @@
           }
           if (event.shiftKey && event.key === "ArrowRight") {
             event.preventDefault()
-            const languageNameIndex = allLanguageNames.findIndex(each => each === languageName)
-            if (allLanguageNames[languageNameIndex + 1]) {
-              languageName = allLanguageNames[languageNameIndex + 1]
+            const grammarNameIndex = grammarNames.findIndex(each => each === grammarName)
+            if (grammarNames[grammarNameIndex + 1]) {
+              grammarName = grammarNames[grammarNameIndex + 1]
             } else {
-              languageName = allLanguageNames[0]
+              grammarName = grammarNames[0]
             }
             refreshDropdowns()
             refreshHighlighting()
           }
           if (event.shiftKey && event.key === "ArrowLeft") {
             event.preventDefault()
-            const languageNameIndex = allLanguageNames.findIndex(each => each === languageName)
-            if (allLanguageNames[languageNameIndex - 1]) {
-              languageName = allLanguageNames[languageNameIndex - 1]
+            const grammarNameIndex = grammarNames.findIndex(each => each === grammarName)
+            if (grammarNames[grammarNameIndex - 1]) {
+              grammarName = grammarNames[grammarNameIndex - 1]
             } else {
-              languageName = allLanguageNames.at(-1)
+              grammarName = grammarNames.at(-1)
             }
             refreshDropdowns()
             refreshHighlighting()
           }
           if (event.shiftKey && event.key === "ArrowDown") {
             event.preventDefault()
-            const themeNameIndex = allThemeNames.findIndex(each => each === themeName)
-            if (allThemeNames[themeNameIndex + 1]) {
-              themeName = allThemeNames[themeNameIndex + 1]
+            const themeNameIndex = themeNames.findIndex(each => each === themeName)
+            if (themeNames[themeNameIndex + 1]) {
+              themeName = themeNames[themeNameIndex + 1]
             } else {
-              themeName = allThemeNames[0]
+              themeName = themeNames[0]
             }
             refreshDropdowns()
             refreshHighlighting()
           }
           if (event.shiftKey && event.key === "ArrowUp") {
             event.preventDefault()
-            const themeNameIndex = allThemeNames.findIndex(each => each === themeName)
-            if (allThemeNames[themeNameIndex - 1]) {
-              themeName = allThemeNames[themeNameIndex - 1]
+            const themeNameIndex = themeNames.findIndex(each => each === themeName)
+            if (themeNames[themeNameIndex - 1]) {
+              themeName = themeNames[themeNameIndex - 1]
             } else {
-              themeName = allThemeNames.at(-1)
+              themeName = themeNames.at(-1)
             }
             refreshDropdowns()
             refreshHighlighting()
