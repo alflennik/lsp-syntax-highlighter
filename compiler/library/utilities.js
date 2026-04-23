@@ -1,6 +1,6 @@
 const omit = require("lodash.omit")
 
-const createScopeNameToColor = async () => {
+const initializeScopeNameToColor = async () => {
   const { createHighlighter, bundledThemes } = await import("shiki")
 
   // Allows you to feed in a scope and get a color back on the other side
@@ -23,7 +23,7 @@ const createScopeNameToColor = async () => {
     return JSON.stringify(sortObjectKeys(omit(output.tokens[0][0], ["content", "offset"])))
   }
 
-  return scopeNameToColor
+  return { scopeNameToColor }
 }
 
 const walkObjects = (value, callback) => {
@@ -43,4 +43,4 @@ const sortObjectKeys = obj =>
     .sort()
     .reduce((acc, key) => ({ ...acc, [key]: obj[key] }), {})
 
-module.exports = { createScopeNameToColor, walkObjects }
+module.exports = { initializeScopeNameToColor, walkObjects }
