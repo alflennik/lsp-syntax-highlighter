@@ -106,10 +106,10 @@ const compile = async () => {
     )
   }
 
-  const databaseFileNames = await fs.readdir(path.resolve(__dirname, "../database"))
+  const analysisFileNames = await fs.readdir(path.resolve(__dirname, "../analysis"))
 
   grammarNames.forEach(grammarName => {
-    if (!databaseFileNames.includes(`${grammarName}.json`)) {
+    if (!analysisFileNames.includes(`${grammarName}.json`)) {
       throw new Error(
         `No data found for the "${grammarName}" grammar provided with the --grammar option. ` +
           `Please ensure a json file is present (with the same name) in the directory here: ` +
@@ -145,7 +145,7 @@ const compile = async () => {
       const imported = await importer()
       return imported.default.at(-1) // Dependent languages will be listed first
     })()
-    database.analysis[grammarName] = require(`../database/${grammarName}.json`)
+    database.analysis[grammarName] = require(`../analysis/${grammarName}.json`)
   }
 
   if (customGrammars.length) {
@@ -171,9 +171,9 @@ const compile = async () => {
   let colorNumber = 1
 
   Object.entries(database.analysis).forEach(([grammarName, analysis]) => {
-    analysis.scopeData.splice(0, 0, [{ scopeName: "comment", rank: 0, semanticToken: "color0" }])
+    analysis.scopeData.splice(0, 0, { scopeName: "default", rank: 0, semanticToken: "color0" })
 
-    for (let i = 1; i < analysis.length; i += 1) {
+    for (let i = 1; i < analysis.scopeData.length; i += 1) {
       const color = `color${colorNumber}`
       const scopeName = `${analysis.grammarScopeName} ${analysis.scopeData[i].scopeName}`
 
@@ -184,11 +184,13 @@ const compile = async () => {
     }
   })
 
+  database.colorCount = colorNumber
+
   await fs.writeFile(databaseFileFullPath, JSON.stringify(database), { encoding: "utf-8" })
 
   await (async () => {
     const packageJsonText = await fs.readFile(packageJsonFullPath, { encoding: "utf-8" })
-    const indentation = packageJsonText.match(/\n?( \t*)"name"/)?.[1] ?? "  "
+    const indentation = packageJsonText.match(/\n?([ \t]*)"name"/)?.[1] ?? "  "
 
     const packageJson = JSON.parse(packageJsonText)
 

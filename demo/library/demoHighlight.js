@@ -1,47 +1,28 @@
-const { createScopeNameToColor } = require("../compiler/library/utilities")
-const initializeHighlighter = require("../highlighter/index")
+const { initializeScopeNameToColor } = require("../../compiler/library/utilities")
+const highlighter = require("../../highlighter")
 const fs = require("fs/promises")
 const path = require("path")
-const database = require("../database.json")
 
 const initializeDemoHighlight = async () => {
-  const {
-    createHighlighter,
-    bundledLanguages: bundledLanguagesRaw,
-    bundledThemes,
-  } = await import("shiki")
+  const databasePath = path.resolve(__dirname, "../database.json")
+  const database = require(databasePath)
+  const { grammars, analysis } = database
 
-  const bundledLanguages = Object.fromEntries(
-    Object.entries(bundledLanguagesRaw).filter(([name]) => {
-      // prettier-ignore
-      return [
-        "json",
-        "javascript",
-        "html",
-        "sql",
-        "markdown",
-        "graphql",
-        "css",
+  highlighter.load(databasePath)
 
-        // "typescript",
-        // "python",
-      ].includes(name)
-    }),
-  )
+  const semanticTokenLookups = {}
+  Object.values(analysis).forEach(({ grammarScopeName, scopeData }) => {
+    scopeData.forEach(({ scopeName, semanticToken }) => {
+      semanticTokenLookups[semanticToken] = { grammarScopeName, scopeName }
+    })
+  })
 
-  const scopeNameToColor = await createScopeNameToColor()
+  const { createHighlighter, bundledThemes } =
+    await import("../../compiler/node_modules/shiki/dist/index.mjs")
 
-  const allGrammars = await Object.fromEntries(
-    await Promise.all(
-      Object.entries(bundledLanguages).map(async ([name, importer]) => {
-        const imported = await importer()
-        const grammar = imported.default.at(-1) // Dependent languages will be listed first
-        return [grammar.name, grammar]
-      }),
-    ),
-  )
+  const { scopeNameToColor } = await initializeScopeNameToColor()
 
-  const allThemes = await Object.fromEntries(
+  const themes = await Object.fromEntries(
     await Promise.all(
       Object.entries(bundledThemes).map(async ([name, importer]) => {
         const themeModule = await importer()
@@ -73,7 +54,7 @@ const initializeDemoHighlight = async () => {
     }
   })
 
-  names = names.filter(name => allGrammars[name]).sort((a, b) => a.localeCompare(b))
+  names = names.filter(name => !!grammars[name]).sort((a, b) => a.localeCompare(b))
 
   let samples = {}
 
@@ -90,17 +71,15 @@ const initializeDemoHighlight = async () => {
 
   samples = Object.fromEntries(Object.entries(samples).sort((a, b) => a[0].localeCompare(b[0])))
 
-  const highlighter = await createHighlighter({
+  const shikiHighlighter = await createHighlighter({
     themes: Object.keys(bundledThemes),
-    langs: Object.keys(bundledLanguages),
+    langs: Object.keys(analysis),
   })
 
-  const { highlight } = await initializeHighlighter({ grammars: Object.values(allGrammars) })
-
-  const demoHighlight = ({ themeName, grammarName }) => {
+  const demoHighlight = async ({ themeName, grammarName }) => {
     const sample = samples[grammarName]
-    const theme = allThemes[themeName]
-    const grammar = allGrammars[grammarName]
+    const theme = themes[themeName]
+    const grammar = grammars[grammarName]
 
     if (!sample) throw new Error("No matching sample found")
     if (!theme) throw new Error("Theme not found")
@@ -111,7 +90,7 @@ const initializeDemoHighlight = async () => {
     const results = {}
 
     const start1 = performance.now()
-    const { tokens: textmateLines } = highlighter.codeToTokens(sample, {
+    const { tokens: textmateLines } = shikiHighlighter.codeToTokens(sample, {
       lang: grammar.name,
       theme,
     })
@@ -135,14 +114,15 @@ const initializeDemoHighlight = async () => {
     const start2 = performance.now()
 
     const tokens2 = []
-    const { tokens: semanticTokens } = highlight({
+    const { tokens: semanticTokens } = await highlighter.highlight({
       text: sample,
       sections: [{ startOffset: 0, endOffset: sample.length, grammar: grammarName }],
     })
 
     semanticTokens.forEach(({ lineIndex, columnIndex, content, semanticToken }) => {
-      const { scopeNameRemaining, grammarName } = semanticTokenLookups[semanticToken]
-      const scopeName = `${grammarName} ${scopeNameRemaining}`
+      const { scopeName: scopeNameRemaining, grammarScopeName } =
+        semanticTokenLookups[semanticToken]
+      const scopeName = `${grammarScopeName} ${scopeNameRemaining}`
 
       const { color, fontStyle } = (() => {
         const colorSettingsString = scopeNameToColor({ scopeName, themeName })
@@ -174,13 +154,13 @@ const initializeDemoHighlight = async () => {
   }
 
   const backgroundColors = Object.fromEntries(
-    Object.entries(allThemes).map(([themeName, theme]) => {
+    Object.entries(themes).map(([themeName, theme]) => {
       return [themeName, theme.colors["editor.background"]]
     }),
   )
 
-  const themeNames = Object.keys(allThemes)
-  const grammarNames = Object.keys(allGrammars)
+  const themeNames = Object.keys(themes)
+  const grammarNames = Object.keys(grammars)
 
   return { demoHighlight, backgroundColors, themeNames, grammarNames }
 }
@@ -193,12 +173,5 @@ const getFontStyle = number => {
   if (number === 4) return "underline"
   if (number === 8) return "strikethrough"
 }
-
-const semanticTokenLookups = {}
-Object.entries(database).forEach(([grammarName, grammarScopes]) => {
-  Object.entries(grammarScopes).forEach(([scopeNameRemaining, { semanticToken }]) => {
-    semanticTokenLookups[semanticToken] = { grammarName, scopeNameRemaining }
-  })
-})
 
 module.exports = initializeDemoHighlight

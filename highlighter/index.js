@@ -1,3 +1,3 @@
-const initializeHighlighter = require("./library/highlight")
+const highlighter = require("./library/highlighter")
 
-module.exports = initializeHighlighter
+module.exports = highlighter

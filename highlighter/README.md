@@ -7,17 +7,10 @@ Note that the languages grammars you support must be packaged into your extensio
 ## Usage
 
 ```js
-const { initializeHighlighter } = require('lsp-syntax-highlighter')
-
-// The path you chose to store your compiled grammars during the setup process
-const compiledGrammarsPath = "./grammars/lsp-syntax-highlighter.json"
-
-const highlighterPromise = await initializeHighlighter(compiledGrammarsPath)
+const highlighter = require('lsp-syntax-highlighter')
 
 const mySemanticTokenHandler = async (textDocument) => {
-  const { highlight } = await highlighterPromise
-
-  const { encodedTokens, tokens } = highlight({ 
+  const { encodedTokens, tokens } = await highlighter.highlight({ 
     text: textDocument,
     sections: [
       { startOffset: 21, endOffset: 68, grammar: 'json' },
@@ -103,32 +96,45 @@ npx lsp-syntax-highlighter-compiler \
 
 After running the command, you need to add some configuration to your LSP.
 
+You need to call `highlighter.load()` with the path pointing to the same grammar database which was created with the `--database-file` command above.
+
+```js
+const path = require('path')
+const highlighter = require('lsp-syntax-highlighter')
+
+const grammarDatabasePath = path.resolve(__dirname, "./grammars/lsp-syntax-highlighter.json")
+highlighter.load(databasePath)
+```
+
+The `.load` call needs to happen before any other highlighter functions can be used.
+
 In your LSP, you need to return the following for the 'initialization' request:
 
 ```js
-const { getCapabilities } = require('lsp-syntax-highlighter')
+const highlighter = require('lsp-syntax-highlighter')
 
-const initializeHandler = () => {
+const initializeHandler = async () => {
   return {
-    capabilities: {
-      textDocumentSync: 1,
-      // ...
-      
-      /*
-        Adds capabilities like this:
-
-        semanticTokensProvider: {
-          legend: {
-            tokenTypes: ['color0', 'color1', 'color2' ], // ... very long list
-            tokenModifiers: [],
-          },
-          full: true,
-        },
-      */
-      ...getCapabilities(),
-    },
     // ...
+    capabilities: {
+      // ...
+      ...highlighter.getCapabilities(),
+    },
   };
+}
+```
+
+For reference or if you're curious, the capabilities returned look like the following:
+
+```js
+{
+  semanticTokensProvider: {
+    legend: {
+      tokenTypes: ['color0', 'color1', 'color2', /* ... very long list */],
+      tokenModifiers: [],
+    },
+    full: true,
+  },
 }
 ```
 
@@ -137,14 +143,10 @@ The exact format of the initializeHandler function will depend on your language 
 Add a handler for `textDocument/semanticTokens/full`:
 
 ```js
-const { initializeHighlighter } = require('lsp-syntax-highlighter')
-
-const highlighterPromise = await initializeHighlighter("./grammars/lsp-syntax-highlighter.json")
+const highlighter = require('lsp-syntax-highlighter')
 
 const mySemanticTokenHandler = async (textDocument) => {
-  const { highlight } = await highlighterPromise
-
-  const { encodedTokens, tokens } = highlight({ 
+  const { encodedTokens, tokens } = await highlighter.highlight({ 
     text: textDocument,
     sections: [
       { 
@@ -168,16 +170,19 @@ The exact format of the handler function will depend on your language server imp
 
 ## API Documentation
 
-### The `initializeHighlighter` Function
-
-The top level function that asynchronously starts the highlighter and returns the highlight function.
+### The `load` and `getCapabilities` Functions
 
 ```js
-const { 
-  highlight // The main highlight function described below
-} = await initializeHighlighter(
-  path // Path to the file containing the compiled grammars
+// Setup function that needs to be called before any other methods
+highlighter.load(
+  // A file path pointing to the compiled grammar database you generated during setup. It's 
+  // recommended to use path.resolve() to get an absolute path (to avoid cwd issues)
+  databasePath
 )
+
+// An object with capabilities that you must return in your LSP's initialization response
+const capabilities = 
+  highlighter.getCapabilities()
 ```
 
 ### The `highlight` Function
@@ -187,7 +192,7 @@ The highlight function uses the same grammar tokenizer built into VSCode, and th
 const { 
   encodedTokens, // The series of numbers required by the LSP standard
   tokens, // A human-readable list of tokens useful for debugging
-} = highlight({
+} = await highlighter.highlight({
   text, // The full text of the document you are highlighting
   sections, // The main highlighting config, described below
 })

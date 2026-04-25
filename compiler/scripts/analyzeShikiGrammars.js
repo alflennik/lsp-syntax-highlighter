@@ -31,7 +31,7 @@ const analyzeShikiGrammars = async () => {
   const analysis = await analyze({ grammar, themes })
 
   await fs.writeFile(
-    path.resolve(__dirname, `../database/${grammar.name}.json`),
+    path.resolve(__dirname, `../analysis/${grammar.name}.json`),
     JSON.stringify(analysis),
     { encoding: "utf-8" },
   )

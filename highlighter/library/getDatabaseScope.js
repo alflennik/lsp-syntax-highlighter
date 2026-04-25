@@ -2,9 +2,9 @@ const initializeGetDatabaseScope = grammarScopesByRank => {
   const cache = new Cache(50_000)
 
   const getDatabaseScope = (grammarScopeStack, { diagnosticReturnAllMatches = false } = {}) => {
-    const grammarName = grammarScopeStack[0]
+    const grammarScopeName = grammarScopeStack[0]
 
-    const scopesByRank = grammarScopesByRank[grammarName]
+    const scopesByRank = grammarScopesByRank[grammarScopeName]
     if (!scopesByRank) return "default"
     const maximumRank = Number(Object.keys(scopesByRank).pop())
 

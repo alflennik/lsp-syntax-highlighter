@@ -2,31 +2,25 @@ const fs = require("fs")
 const path = require("path")
 const vsctm = require("vscode-textmate")
 const oniguruma = require("vscode-oniguruma")
-const colors = require("../colors.json")
-const database = require("../database.json")
 const initializeGetDatabaseScope = require("./getDatabaseScope")
 const transformForHighlighting = require("./transformForHighlighting")
 
-const colorsToIndexes = Object.fromEntries(
-  colors.map((color, index) => {
-    return [color, index]
-  }),
-)
+const initializeHighlight = async database => {
+  const { grammars: grammarsRaw, analysis, colorCount } = database
 
-const grammarScopesByRank = {}
-Object.entries(database).forEach(([grammarName, grammarScopes]) => {
-  grammarScopesByRank[grammarName] = {}
+  const grammars = Object.values(grammarsRaw)
 
-  Object.entries(grammarScopes).forEach(([scope, { rank }]) => {
-    if (!grammarScopesByRank[grammarName][rank]) grammarScopesByRank[grammarName][rank] = []
-    grammarScopesByRank[grammarName][rank].push(scope)
+  const grammarScopesByRank = {}
+  Object.values(analysis).forEach(({ grammarScopeName, scopeData }) => {
+    grammarScopesByRank[grammarScopeName] = {}
+
+    scopeData.forEach(({ scopeName, rank }) => {
+      if (!grammarScopesByRank[grammarScopeName][rank]) {
+        grammarScopesByRank[grammarScopeName][rank] = []
+      }
+      grammarScopesByRank[grammarScopeName][rank].push(scopeName)
+    })
   })
-})
-
-const initializeHighlighter = async ({ grammars } = {}) => {
-  if (!grammars || !grammars.length) {
-    throw new Error("no grammars provided")
-  }
 
   const { getDatabaseScope } = initializeGetDatabaseScope(grammarScopesByRank)
 
@@ -131,13 +125,13 @@ const initializeHighlighter = async ({ grammars } = {}) => {
     const tokens = []
 
     grammarTokens.forEach(({ offset, lineIndex, columnIndex, content, scopes: scopesRaw }) => {
-      const [grammarSelfName, scopes] = getNestedGrammar(scopesRaw)
+      const [grammarScopeName, scopes] = getNestedGrammar(scopesRaw)
 
       const databaseScope = getDatabaseScope(scopes)
 
       let semanticToken
-      if (database[grammarSelfName][databaseScope]) {
-        semanticToken = database[grammarSelfName][databaseScope].semanticToken
+      if (analysis[grammarScopeName][databaseScope]) {
+        semanticToken = analysis[grammarScopeName][databaseScope].semanticToken
       } else {
         semanticToken = "color0"
       }
@@ -153,17 +147,17 @@ const initializeHighlighter = async ({ grammars } = {}) => {
 
 const initializeGetNestedGrammar = grammarScopeNames => {
   const getNestedGrammar = grammarScopeStackRaw => {
-    const grammarNameAt =
+    const grammarScopeNameAt =
       grammarScopeStackRaw
         .toReversed() // Nested languages first
         .findIndex(scopeName => grammarScopeNames.includes(scopeName)) + 1
 
-    const grammarName = grammarScopeStackRaw.at(-grammarNameAt)
+    const grammarScopeName = grammarScopeStackRaw.at(-grammarScopeNameAt)
 
     // With nested languages disregard the wrapping language scopes
-    const grammarScopeStack = grammarScopeStackRaw.slice(-grammarNameAt)
+    const grammarScopeStack = grammarScopeStackRaw.slice(-grammarScopeNameAt)
 
-    return [grammarName, grammarScopeStack]
+    return [grammarScopeName, grammarScopeStack]
   }
 
   return { getNestedGrammar }
@@ -176,7 +170,7 @@ const encodeTokens = tokens => {
   const encodedTokens = []
 
   tokens.forEach(({ lineIndex, columnIndex, content, semanticToken }) => {
-    const semanticTokenIndex = colorsToIndexes[semanticToken]
+    const semanticTokenIndex = getColorNumber(semanticToken)
 
     encodedTokens.push(
       lineIndex - lastLineIndex,
@@ -204,6 +198,10 @@ const convertIntegerArrayToBitmask = indexes => {
   return bitmask
 }
 
+const getColorNumber = color => {
+  return color.match(/(\d+)$/)[1]
+}
+
 const tokenModifiersEncoded = convertIntegerArrayToBitmask([0])
 
-module.exports = initializeHighlighter
+module.exports = initializeHighlight
