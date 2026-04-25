@@ -1,5 +1,7 @@
 // Execute this file with node to run
 
+const fs = require("fs/promises")
+const path = require("path")
 const analyze = require("../library/analyze")
 
 const analyzeShikiGrammars = async () => {
@@ -14,21 +16,25 @@ const analyzeShikiGrammars = async () => {
     ),
   )
 
-  const allGrammars = await Object.fromEntries(
+  const grammars = await Object.fromEntries(
     await Promise.all(
       Object.entries(bundledLanguages).map(async ([name, importer]) => {
         const imported = await importer()
         const grammar = imported.default.at(-1) // Dependent languages will be listed first
-        return [grammar.scopeName, grammar]
+        return [grammar.name, grammar]
       }),
     ),
   )
 
-  const grammarToUse = allGrammars["source.css"]
+  const grammar = grammars["html"]
 
-  const analysis = await analyze({ grammar: grammarToUse, themes })
+  const analysis = await analyze({ grammar, themes })
 
-  console.log(analysis)
+  await fs.writeFile(
+    path.resolve(__dirname, `../database/${grammar.name}.json`),
+    JSON.stringify(analysis),
+    { encoding: "utf-8" },
+  )
 }
 
 analyzeShikiGrammars()

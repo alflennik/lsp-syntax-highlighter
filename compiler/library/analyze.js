@@ -1,19 +1,11 @@
-const { initializeScopeNameToColor } = require("./utilities")
-
-// When in local development it is preferable to load the file which is right there in the repo.
-// When deployed to NPM that is impossible, so load the file from the dependency.
-let initializeGetDatabaseScope
-try {
-  initializeGetDatabaseScope = require("../../highlighter/library/getDatabaseScope")
-} catch (error) {
-  throw new Error("Need to fix package resolution when used as a package")
-}
+const { initializeScopeNameToColor, requireWithLocalMode } = require("./utilities")
+const initializeGetDatabaseScope = requireWithLocalMode(
+  "lsp-syntax-highlighter/library/getDatabaseScope",
+  process.env.LOCAL_PACKAGES,
+)
 
 const analyze = async ({ grammar, themes }) => {
-  console.info(
-    "⚠️ Note: Please be aware that in some cases this process can take more than an hour to complete.",
-  )
-
+  console.info("⚠️ Note: This process can take more than an hour to complete.")
   await new Promise(resolve => setTimeout(resolve, 3000))
 
   console.info("\nStarting analysis for", grammar.name, "grammar.")
@@ -215,7 +207,7 @@ const analyze = async ({ grammar, themes }) => {
     }
   }
 
-  console.info("\nIdentifying all scopes that grammar can produce...")
+  console.info("\nIdentifying all scopes grammar can produce ...")
 
   let allPossibleScopesKeyed
 
