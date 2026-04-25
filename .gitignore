@@ -3,3 +3,4 @@ data.db
 .DS_Store
 results.json
 coverage
+demo/database.json

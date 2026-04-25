@@ -22,6 +22,14 @@ const initializeHighlight = async database => {
     })
   })
 
+  const semanticTokenLookups = {}
+  Object.values(analysis).forEach(({ grammarScopeName, scopeData }) => {
+    semanticTokenLookups[grammarScopeName] = {}
+    scopeData.forEach(({ scopeName, semanticToken }) => {
+      semanticTokenLookups[grammarScopeName][scopeName] = semanticToken
+    })
+  })
+
   const { getDatabaseScope } = initializeGetDatabaseScope(grammarScopesByRank)
 
   // See https://www.npmjs.com/package/vscode-textmate
@@ -130,8 +138,8 @@ const initializeHighlight = async database => {
       const databaseScope = getDatabaseScope(scopes)
 
       let semanticToken
-      if (analysis[grammarScopeName][databaseScope]) {
-        semanticToken = analysis[grammarScopeName][databaseScope].semanticToken
+      if (semanticTokenLookups[grammarScopeName][databaseScope]) {
+        semanticToken = semanticTokenLookups[grammarScopeName][databaseScope]
       } else {
         semanticToken = "color0"
       }

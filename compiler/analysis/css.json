@@ -1,4 +1,5 @@
 {
+  "grammarName": "css",
   "grammarScopeName": "source.css",
   "scopeData": [
     { "scopeName": "comment", "rank": 0 },

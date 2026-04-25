@@ -365,7 +365,7 @@ const analyze = async ({ grammar, themes }) => {
     if (isDone) break
   }
 
-  const analysis = { grammarScopeName: grammar.scopeName, scopeData: [] }
+  const analysis = { grammarName: grammar.name, grammarScopeName: grammar.scopeName, scopeData: [] }
 
   Object.entries(ranksByScopeName).forEach(([scopeNameRemaining, rank]) => {
     analysis.scopeData.push({ scopeName: scopeNameRemaining, rank })
