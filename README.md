@@ -11,3 +11,17 @@ Please see the main documentation in the [readme in the highlighter folder](./hi
 You can spin up the same demo I used to confirm that the highlighting is working. See the [readme in the demo folder](./demo/README.md) for instructions.
 
 ![Screenshot of demo environment](./demo/demo.png)
+
+## Publishing
+
+First log in to npm:
+
+```
+npm login
+```
+
+From the compiler and highlighter folders, run:
+
+```
+npm publish
+```

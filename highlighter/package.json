@@ -1,6 +1,6 @@
 {
   "name": "lsp-syntax-highlighter",
-  "version": "0.0.1",
+  "version": "1.0.3",
   "description": "Syntax highlighter for your LSP language server",
   "main": "index.js",
   "scripts": {},

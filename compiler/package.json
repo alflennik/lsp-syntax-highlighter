@@ -1,6 +1,6 @@
 {
   "name": "lsp-syntax-highlighter-compiler",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Compiler for lsp-syntax-highlighter",
   "main": "index.js",
   "scripts": {},

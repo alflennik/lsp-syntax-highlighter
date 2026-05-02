@@ -78,7 +78,7 @@ npx lsp-syntax-highlighter-compiler \
   "contributes": {
     "configurationDefaults": { "editor.semanticHighlighting.enabled": true },
     "semanticTokenScopes": [{ "scopes": 
-      {"color0":["default"],"color1": /* very long list which is dependent on the grammars you have enabled ... */ }
+      {"color0":["default"], "color1": /* ... very long list which is dependent on the grammars you have enabled ... */ }
     }]
   },
   ```
