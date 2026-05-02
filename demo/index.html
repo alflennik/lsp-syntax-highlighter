@@ -110,7 +110,7 @@
             `
             <div class="demo-warning-container">
               <div class="demo-warning">
-                From the demo folder, please run <code>\`node --watch server.js\`</code> and refresh.
+                From the demo folder, please run <code>\`node server.js\`</code> and refresh.
               </div>
             </div>
           `,
@@ -121,7 +121,7 @@
         const urlParams = /themeName=(.+)&grammarName=(.+)/.exec(location.hash)
 
         const defaultThemeName = urlParams?.[1] || "one-dark-pro"
-        let defaultGrammarName = urlParams?.[2] || "json"
+        const defaultGrammarName = urlParams?.[2] || "json"
 
         document.body.insertAdjacentHTML(
           "afterbegin",
@@ -168,11 +168,6 @@
           </div>
         `,
         )
-
-        // const highlighter = await createHighlighter({
-        //   themes: [...themeNames, ...Object.values(semanticThemes)],
-        //   langs: grammarNames
-        // })
 
         let themeName = defaultThemeName
         let grammarName = defaultGrammarName

@@ -81,6 +81,8 @@ const analyze = async ({ grammar, themes }) => {
     { maxDepth: 4, maxRecursion: 1, allowPotentialDeadEnds: false },
   ]
 
+  // Expected results for different languages (might not be the actual results)
+
   // default: { maxDepth: 4, maxRecursion: 1, allowPotentialDeadEnds: true },
   // html: { maxDepth: 7, maxRecursion: 4 },
   // css: { maxDepth: 5, maxRecursion: 2 },
@@ -297,12 +299,18 @@ const analyze = async ({ grammar, themes }) => {
     if (
       !meaningfulScopesKeyed[simplified] ||
       // The shortest scope stack associated with the simplified scope usually gets better ranking
-      // results in step 4
+      // results
       meaningfulScopesKeyed[simplified].originalScopeStack.length > scopeName
     ) {
       meaningfulScopesKeyed[simplified] = {
-        // Technically multiple scope stacks will produce the same simplified scope, but for now I
-        // will see if only persisting one still produces good results
+        // Technically multiple scope stacks will produce the same simplified scope, but this seems
+        // to be the most effective way to reduce the final scope count which would be astronomical
+        // otherwise.
+        //
+        // Generally this works well, but in the future I should consider allowing multiple scopes
+        // to be created on this step to avoid compressing the analysis too much. The idea is to
+        // consider the most compressed scope to be taken and then allow 3-10 scopes to also be
+        // included with their originalScopeStacks.
         originalScopeStack: scopeName,
       }
     }
@@ -322,7 +330,6 @@ const analyze = async ({ grammar, themes }) => {
   )
 
   console.info("\nApplying rankings to fix specificity issues ...")
-  // Default is not a real scope so it shows the color when the scope is unknown
 
   const ranksByScopeName = {}
   scopes.forEach(({ scopeName }) => {

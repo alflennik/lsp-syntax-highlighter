@@ -18,14 +18,23 @@ const createHighlighter = () => {
   }
 
   const highlight = async (...args) => {
+    if (!database) {
+      throw new Error("Cannot highlight because `highlighter.load(databasePath)` was never called")
+    }
     const { highlight: highlightSync } = await highlightPromise
     return highlightSync(...args)
   }
 
   const getCapabilities = () => {
+    if (!database) {
+      throw new Error(
+        "Cannot get capabilities because `highlighter.load(databasePath)` was never called",
+      )
+    }
+
     let colorArray = []
     for (let i = 0; i < database.colorCount; i += 1) {
-      colorsArray.push(`color${i}`)
+      colorArray.push(`color${i}`)
     }
 
     return {

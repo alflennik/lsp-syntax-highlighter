@@ -28,18 +28,6 @@ const initializeScopeNameToColor = async () => {
   return { scopeNameToColor }
 }
 
-const walkObjects = (value, callback) => {
-  if (value === null || typeof value !== "object") return
-
-  if (Array.isArray(value)) {
-    value.forEach(item => walkObjects(item, callback))
-    return
-  }
-
-  callback(value)
-  Object.values(value).forEach(v => walkObjects(v, callback))
-}
-
 const sortObjectKeys = obj =>
   Object.keys(obj)
     .sort()
@@ -50,12 +38,11 @@ const requireWithLocalMode = (packageStringRaw, LOCAL_PACKAGES) => {
 
   const isPackage = (() => {
     const fileNames = fsStandard.readdirSync(path.resolve(__dirname, "../../"))
-    if (
+    return !(
       fileNames.includes("compiler") &&
       fileNames.includes("highlighter") &&
       !fileNames.includes("package.json")
     )
-      return false
   })()
 
   if (!isPackage && LOCAL_PACKAGES === undefined) {
@@ -87,4 +74,4 @@ const requireWithLocalMode = (packageStringRaw, LOCAL_PACKAGES) => {
   }
 }
 
-module.exports = { initializeScopeNameToColor, walkObjects, requireWithLocalMode }
+module.exports = { initializeScopeNameToColor, requireWithLocalMode }

@@ -113,7 +113,7 @@ const compile = async () => {
       throw new Error(
         `No data found for the "${grammarName}" grammar provided with the --grammar option. ` +
           `Please ensure a json file is present (with the same name) in the directory here: ` +
-          `https://github.com/alflennik/lsp-syntax-highlighter/tree/main/compiler/database\n\n` +
+          `https://github.com/alflennik/lsp-syntax-highlighter/tree/main/compiler/analysis\n\n` +
           `If your intended grammar is missing you can still add it with the ` +
           `--custom-grammar=./my-grammar.json option.`,
       )
@@ -166,6 +166,7 @@ const compile = async () => {
     }
   }
 
+  // Default is not a real scope so it shows the color when the scope is unknown
   const semanticTokens = { color0: ["default"] }
 
   let colorNumber = 1

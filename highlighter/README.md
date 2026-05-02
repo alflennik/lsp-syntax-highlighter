@@ -2,7 +2,9 @@
 
 Add syntax highlighting to your language server, officially compatible with VSCode and Cursor.
 
-Note that the languages grammars you support must be packaged into your extension and cannot be dynamically loaded. Due to VSCode's architecture (not a limitation caused by this library) users will experience poor performance if you include too many languages in your extension (works best with less than 5-10 grammars).
+Note that the languages grammars you support must be packaged into your extension and cannot be dynamically loaded. Due to VSCode's architecture (not a limitation caused by this library) users will experience poor performance if you include too many languages in your extension (works best with less than 15-20 grammars). 
+
+Also note that some grammars work better than others. In my opinion around 50% are close to perfect, 20% are usuable and 30% are unusable. To see your grammar in action, clone the repo for this package at https://github.com/alflennik/lsp-syntax-highlighter/ and follow the instuctions in the demo folder spin up the demo which shows the results you can expect for the languages that are important to you.
 
 ## Usage
 
@@ -80,11 +82,11 @@ npx lsp-syntax-highlighter-compiler \
     }]
   },
   ```
-- `--grammar=html`, `--grammar=css`, `--grammar=javascript`: Grammars you want to support. You can use any grammars which appear in the list here: https://github.com/alflennik/lsp-syntax-highlighter/tree/main/compiler/database The name you provide should match the json file, so if the grammar file is called `html.json` the command should be `--grammar=html`. Thanks to the Shiki library for collating all these commonly used grammars.
+- `--grammar=html`, `--grammar=css`, `--grammar=javascript`: Grammars you want to support. You can use any grammars which appear in the list here: https://github.com/alflennik/lsp-syntax-highlighter/tree/main/compiler/analysis The name you provide should match the json file, so if the grammar file is called `html.json` the command should be `--grammar=html`. Thanks to the Shiki library for collating all these commonly used grammars.
 
   For nested languages to work, ensure that you also include their grammars as well, for example HTML requires CSS and JS grammars since it can contain those languages inside style and script tags.
 
-  Users will experience poor performance if you include too many languages in your extension (works best with less than 5-10 grammars).
+  Users will experience poor performance if you include too many languages in your extension (works best with less than 15-20 grammars).
 
   At least one grammar or custom grammar is required.
 
@@ -102,7 +104,7 @@ You need to call `highlighter.load()` with the path pointing to the same grammar
 const path = require('path')
 const highlighter = require('lsp-syntax-highlighter')
 
-const grammarDatabasePath = path.resolve(__dirname, "./grammars/lsp-syntax-highlighter.json")
+const databasePath = path.resolve(__dirname, "./grammars/lsp-syntax-highlighter.json")
 highlighter.load(databasePath)
 ```
 
@@ -188,11 +190,15 @@ The highlight function uses the same grammar tokenizer built into VSCode, and th
 
 ```js
 const { 
-  encodedTokens, // The series of numbers required by the LSP standard
-  tokens, // A human-readable list of tokens useful for debugging
+  // The series of numbers required by the LSP standard
+  encodedTokens, 
+  // A human-readable list of tokens useful for debugging
+  tokens, 
 } = await highlighter.highlight({
-  text, // The full text of the document you are highlighting
-  sections, // The main highlighting config, described below
+  // The full text of the document you are highlighting
+  text, 
+  // The main highlighting config, described below
+  sections, 
 })
 ```
 
@@ -200,15 +206,25 @@ const {
 
 ```js
 const sections = [{
-  startOffset, // A number referring to an index on the text document being highlighted
-  endOffset, // The end number
-  grammar, // The grammar name, which needs to match the name the grammar gives itself. This can be tricky, like CSS calls itself "css" but "js" calls itself "javascript". The name can be found at the top level of the grammar file.
+  // A number referring to an index on the text document being highlighted
+  startOffset, 
+  // The end number
+  endOffset, 
+  // The grammar name (matches the name used when the database was compiled, e.g. "html" in 
+  // "--grammar=html")
+  grammar, 
   replacements: [
-    // An array of alterations that you want to make to the text before sending it to the highlighter. Useful for priming the grammar into a specific state or removing string replacements like `my string with an ${insertion}` in JavaScript.
+    // An array of alterations that you want to make to the text before sending it to the
+    // highlighter. Useful for priming the grammar into a specific state or removing string
+    // replacements like `my string with an ${insertion}` in JavaScript.
     { 
       startOffset: replacementStart, // An index number which needs to be within the text document
-      endOffset: replacementEnd, // The end number. Can be the same as the startOffset in the case that you want to add text without removing any.
-      text: replacementText, // Text to insert within the offsets. Can be an empty string if you simply want to remove text.
+      // The end number. Can be the same as the startOffset in the case that you want to add text 
+      // without removing any.
+      endOffset: replacementEnd, 
+      // Text to insert within the offsets. Can be an empty string if you simply want to remove 
+      // text.
+      text: replacementText, 
     }
   ]
 }]
