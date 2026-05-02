@@ -85,6 +85,7 @@ const initializeHighlight = async database => {
             columnIndex: indexes.originalColumnIndex,
             content: tokenTransformed.content,
             semanticToken: tokenTransformed.semanticToken,
+            scopes: tokenTransformed.scopes,
           })
         }
       })
@@ -133,6 +134,9 @@ const initializeHighlight = async database => {
     const tokens = []
 
     grammarTokens.forEach(({ offset, lineIndex, columnIndex, content, scopes: scopesRaw }) => {
+      if (content === "MY_OTHER_CONST") {
+        console.log()
+      }
       const [grammarScopeName, scopes] = getNestedGrammar(scopesRaw)
 
       const databaseScope = getDatabaseScope(scopes)
@@ -144,7 +148,7 @@ const initializeHighlight = async database => {
         semanticToken = "color0"
       }
 
-      tokens.push({ offset, lineIndex, columnIndex, content, semanticToken })
+      tokens.push({ offset, lineIndex, columnIndex, content, semanticToken, scopes: scopesRaw })
     })
 
     return tokens

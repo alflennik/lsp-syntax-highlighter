@@ -94,16 +94,18 @@ const analyze = async ({ grammar, themes }) => {
 
   const attemptProcessingGrammar = ({ searchDepth, allPossibleScopesKeyed }) => {
     let iterationCount = 0
-    const maxIterationCount = 1_000_000
-    const maxResults = 5_000
-    // const maxIterationCount = 30_000_000
-    // const maxResults = 500_000
+    // const maxIterationCount = 1_000_000
+    // const maxResults = 5_000
+    const maxIterationCount = 30_000_000
+    const maxResults = 500_000
 
     const { maxDepth, maxRecursion, allowPotentialDeadEnds = true } = searchDepth
 
     const context = {
       scopeString: `${grammar.scopeName}`,
-      depthOfRecursion: Object.fromEntries(Object.keys(grammar.repository).map(name => [name, 0])),
+      depthOfRecursion: Object.fromEntries(
+        Object.keys(grammar.repository ?? {}).map(name => [name, 0]),
+      ),
     }
 
     context.depthOfRecursion.$self = 0

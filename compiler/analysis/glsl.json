@@ -1,0 +1,1 @@
+{"grammarName":"glsl","grammarScopeName":"source.glsl","scopeData":[{"scopeName":"keyword.control","rank":0},{"scopeName":"storage.type","rank":0},{"scopeName":"storage.modifier","rank":0},{"scopeName":"support.variable","rank":0},{"scopeName":"support.constant","rank":0},{"scopeName":"support.function","rank":0},{"scopeName":"invalid.illegal","rank":0}]}

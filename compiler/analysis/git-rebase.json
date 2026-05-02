@@ -1,0 +1,1 @@
+{"grammarName":"git-rebase","grammarScopeName":"text.git-rebase","scopeData":[{"scopeName":"comment","rank":0},{"scopeName":"comment punctuation.definition.comment","rank":1},{"scopeName":"support.function.git-rebase","rank":0},{"scopeName":"constant.sha.git-rebase","rank":0}]}

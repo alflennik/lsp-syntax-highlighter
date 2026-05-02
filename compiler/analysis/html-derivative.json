@@ -1,0 +1,1 @@
+{"grammarName":"html-derivative","grammarScopeName":"text.html.derivative","scopeData":[{"scopeName":"meta.tag","rank":0},{"scopeName":"meta.tag punctuation.definition.tag.begin.html","rank":1},{"scopeName":"meta.tag.other.unrecognized.html.derivative entity.name.tag","rank":1},{"scopeName":"meta.tag punctuation.definition.tag.end.html","rank":1}]}

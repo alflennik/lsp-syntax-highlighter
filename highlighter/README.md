@@ -124,7 +124,7 @@ const initializeHandler = async () => {
 }
 ```
 
-For reference or if you're curious, the capabilities returned look like the following:
+The exact format of the initializeHandler function will depend on your language server implementation. For reference or if you're curious, the capabilities returned look like the following:
 
 ```js
 {
@@ -137,8 +137,6 @@ For reference or if you're curious, the capabilities returned look like the foll
   },
 }
 ```
-
-The exact format of the initializeHandler function will depend on your language server implementation.
 
 Add a handler for `textDocument/semanticTokens/full`:
 

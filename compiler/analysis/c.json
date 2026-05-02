@@ -1,0 +1,405 @@
+{
+  "grammarName": "c",
+  "grammarScopeName": "source.c",
+  "scopeData": [
+    { "scopeName": "meta.preprocessor", "rank": 0 },
+    { "scopeName": "keyword.control.directive.conditional.c", "rank": 1 },
+    { "scopeName": "punctuation.definition.directive.c", "rank": 0 },
+    { "scopeName": "constant.numeric", "rank": 0 },
+    { "scopeName": "invalid.illegal", "rank": 1 },
+    { "scopeName": "comment.line.double-slash", "rank": 1 },
+    { "scopeName": "comment punctuation.definition.comment", "rank": 2 },
+    { "scopeName": "comment constant.character.escape.line-continuation.c", "rank": 2 },
+    { "scopeName": "comment storage.type.class", "rank": 2 },
+    { "scopeName": "comment markup.italic", "rank": 2 },
+    { "scopeName": "comment markup.bold", "rank": 2 },
+    { "scopeName": "comment markup.inline.raw.string", "rank": 2 },
+    { "scopeName": "comment keyword.other", "rank": 2 },
+    { "scopeName": "comment variable.parameter", "rank": 2 },
+    { "scopeName": "comment", "rank": 1 },
+    { "scopeName": "comment.block.documentation storage.type.class", "rank": 3 },
+    { "scopeName": "comment.block.documentation markup.inline.raw.string", "rank": 3 },
+    { "scopeName": "comment.block.documentation keyword.other", "rank": 3 },
+    { "scopeName": "comment.block.documentation variable.parameter", "rank": 3 },
+    { "scopeName": "meta.preprocessor punctuation", "rank": 1 },
+    { "scopeName": "string.quoted", "rank": 1 },
+    { "scopeName": "string.quoted punctuation.definition.string.begin", "rank": 2 },
+    { "scopeName": "string.quoted constant.character.escape", "rank": 2 },
+    { "scopeName": "string.quoted invalid.illegal", "rank": 2 },
+    { "scopeName": "string constant.other.placeholder.c", "rank": 2 },
+    { "scopeName": "string.quoted constant.character.escape.line-continuation.c", "rank": 3 },
+    { "scopeName": "string.quoted punctuation.definition.string.end", "rank": 2 },
+    { "scopeName": "keyword.other.unit", "rank": 1 },
+    { "scopeName": "constant.numeric punctuation.separator", "rank": 10 },
+    { "scopeName": "meta.preprocessor punctuation.separator", "rank": 10 },
+    { "scopeName": "keyword.operator.plus.exponent", "rank": 1 },
+    { "scopeName": "keyword.operator.minus.exponent", "rank": 1 },
+    { "scopeName": "keyword.other.unit.suffix.floating-point", "rank": 2 },
+    { "scopeName": "keyword.operator.ternary", "rank": 1 },
+    { "scopeName": "keyword.operator.sizeof.c", "rank": 1 },
+    { "scopeName": "keyword.operator.decrement.c", "rank": 1 },
+    { "scopeName": "keyword.operator.increment.c", "rank": 1 },
+    { "scopeName": "keyword.operator.assignment.compound", "rank": 1 },
+    { "scopeName": "keyword.operator.bitwise.shift.c", "rank": 1 },
+    { "scopeName": "keyword.operator.comparison.c", "rank": 1 },
+    { "scopeName": "keyword.operator.logical", "rank": 1 },
+    { "scopeName": "keyword.operator.c", "rank": 1 },
+    { "scopeName": "keyword.operator.assignment.c", "rank": 1 },
+    { "scopeName": "storage.type.built-in.primitive", "rank": 1 },
+    { "scopeName": "storage.type", "rank": 1 },
+    { "scopeName": "storage.modifier.c", "rank": 1 },
+    { "scopeName": "meta.preprocessor punctuation.section", "rank": 2 },
+    { "scopeName": "string.quoted meta.embedded.assembly", "rank": 2 },
+    { "scopeName": "meta.preprocessor punctuation.definition.directive.c", "rank": 2 },
+    { "scopeName": "keyword.control.directive", "rank": 1 },
+    { "scopeName": "entity.name.tag", "rank": 1 },
+    { "scopeName": "comment.block.preprocessor", "rank": 2 },
+    { "scopeName": "meta.preprocessor entity.name", "rank": 1 },
+    { "scopeName": "meta.preprocessor meta.block", "rank": 1 },
+    { "scopeName": "keyword.control.switch", "rank": 2 },
+    { "scopeName": "meta.block meta.preprocessor", "rank": 2 },
+    { "scopeName": "meta.block invalid.illegal", "rank": 2 },
+    { "scopeName": "meta.block variable.other.object", "rank": 2 },
+    { "scopeName": "meta.preprocessor punctuation.separator.dot-access.c", "rank": 10 },
+    { "scopeName": "meta.preprocessor punctuation.separator.pointer-access.c", "rank": 10 },
+    { "scopeName": "meta.block variable.other.member.c", "rank": 2 },
+    { "scopeName": "entity.name.function", "rank": 2 },
+    { "scopeName": "meta.preprocessor meta.block meta.function-call", "rank": 2 },
+    { "scopeName": "meta.preprocessor meta.block meta.function-call.c", "rank": 3 },
+    { "scopeName": "keyword.control", "rank": 1 },
+    { "scopeName": "keyword.other", "rank": 1 },
+    { "scopeName": "meta.preprocessor constant.other", "rank": 1 },
+    { "scopeName": "variable.other", "rank": 1 },
+    { "scopeName": "constant.language", "rank": 1 },
+    { "scopeName": "keyword.control.directive.define.c", "rank": 2 },
+    { "scopeName": "entity.name.function.preprocessor", "rank": 3 },
+    { "scopeName": "meta.preprocessor punctuation.definition.parameters", "rank": 2 },
+    { "scopeName": "meta.preprocessor variable.parameter", "rank": 2 },
+    { "scopeName": "meta.preprocessor meta.function.c", "rank": 1 },
+    { "scopeName": "meta.preprocessor meta.function.c punctuation", "rank": 2 },
+    { "scopeName": "variable.other.object", "rank": 2 },
+    {
+      "scopeName": "meta.preprocessor meta.function.c punctuation.separator.dot-access.c",
+      "rank": 11
+    },
+    {
+      "scopeName": "meta.preprocessor meta.function.c punctuation.separator.pointer-access.c",
+      "rank": 11
+    },
+    { "scopeName": "variable.other.member.c", "rank": 2 },
+    { "scopeName": "meta.preprocessor meta.function.c punctuation.section", "rank": 3 },
+    { "scopeName": "meta.preprocessor meta.function.c meta.function-call", "rank": 2 },
+    {
+      "scopeName": "meta.preprocessor punctuation.section.parens.begin.bracket.round.c",
+      "rank": 4
+    },
+    { "scopeName": "meta.preprocessor punctuation.section.parens.end.bracket.round.c", "rank": 4 },
+    { "scopeName": "meta.preprocessor meta.function-call", "rank": 1 },
+    { "scopeName": "string.unquoted", "rank": 1 },
+    { "scopeName": "string constant.character.escape.line-continuation.c", "rank": 2 },
+    { "scopeName": "string punctuation", "rank": 2 },
+    { "scopeName": "meta.preprocessor.include", "rank": 1 },
+    { "scopeName": "constant.character.escape.line-continuation.c", "rank": 2 },
+    { "scopeName": "string.quoted.other.lt-gt.include", "rank": 2 },
+    { "scopeName": "keyword.control.directive.line.c", "rank": 2 },
+    { "scopeName": "keyword.control.directive.undef.c", "rank": 2 },
+    { "scopeName": "keyword.control.directive.pragma.c", "rank": 2 },
+    { "scopeName": "entity.other.attribute-name", "rank": 1 },
+    { "scopeName": "support.type.sys-types", "rank": 1 },
+    { "scopeName": "support.type", "rank": 1 },
+    { "scopeName": "meta.preprocessor support.constant", "rank": 1 },
+    { "scopeName": "support.type.posix-reserved.c", "rank": 2 },
+    { "scopeName": "meta.block variable.other", "rank": 2 },
+    {
+      "scopeName": "meta.preprocessor meta.function.c meta.function.definition.parameters.c",
+      "rank": 2
+    },
+    {
+      "scopeName": "meta.preprocessor punctuation.section.parameters.begin.bracket.round.c",
+      "rank": 4
+    },
+    {
+      "scopeName": "meta.preprocessor punctuation.section.parameters.end.bracket.round.c",
+      "rank": 4
+    },
+    { "scopeName": "meta.preprocessor variable", "rank": 1 },
+    { "scopeName": "meta.preprocessor punctuation.definition.begin.bracket", "rank": 2 },
+    { "scopeName": "meta.preprocessor punctuation.definition.end.bracket", "rank": 2 },
+    { "scopeName": "storage.modifier.array.bracket.square.c", "rank": 1 },
+    { "scopeName": "meta.preprocessor punctuation.terminator", "rank": 11 },
+    { "scopeName": "meta.preprocessor meta.function-call.c", "rank": 2 },
+    { "scopeName": "keyword.control.default", "rank": 2 },
+    { "scopeName": "keyword.control.case", "rank": 2 },
+    { "scopeName": "meta.preprocessor punctuation.separator.delimiter", "rank": 10 },
+    { "scopeName": "string comment variable.parameter", "rank": 3 },
+    { "scopeName": "string comment.block.documentation variable.parameter", "rank": 4 },
+    { "scopeName": "meta.preprocessor meta.function-call punctuation", "rank": 4 },
+    {
+      "scopeName": "meta.preprocessor meta.function-call punctuation.separator.dot-access.c",
+      "rank": 11
+    },
+    {
+      "scopeName": "meta.preprocessor meta.function-call punctuation.separator.pointer-access.c",
+      "rank": 11
+    },
+    { "scopeName": "meta.block meta.function-call variable.other.member.c", "rank": 4 },
+    { "scopeName": "meta.function-call entity.name.function", "rank": 4 },
+    { "scopeName": "meta.preprocessor meta.function-call punctuation.section", "rank": 5 },
+    {
+      "scopeName": "meta.preprocessor meta.function.c punctuation.definition.directive.c",
+      "rank": 3
+    },
+    { "scopeName": "meta.function invalid.illegal", "rank": 2 },
+    { "scopeName": "meta.preprocessor meta.function.c meta.function-call.c", "rank": 3 },
+    { "scopeName": "meta.preprocessor punctuation.section.block.begin.bracket.curly.c", "rank": 4 },
+    { "scopeName": "meta.preprocessor punctuation.section.block.end.bracket.curly.c", "rank": 4 },
+    { "scopeName": "meta.block meta.function-call variable.other", "rank": 4 },
+    { "scopeName": "meta.preprocessor meta.function-call punctuation.separator", "rank": 12 },
+    { "scopeName": "punctuation", "rank": 0 },
+    { "scopeName": "entity.name", "rank": 0 },
+    { "scopeName": "meta.block", "rank": 0 },
+    { "scopeName": "punctuation.section", "rank": 1 },
+    { "scopeName": "punctuation.separator", "rank": 10 },
+    { "scopeName": "punctuation.separator.dot-access.c", "rank": 11 },
+    { "scopeName": "punctuation.separator.pointer-access.c", "rank": 11 },
+    { "scopeName": "meta.block meta.function-call", "rank": 1 },
+    { "scopeName": "meta.block meta.function-call.c", "rank": 2 },
+    { "scopeName": "meta.block meta.preprocessor meta.function-call", "rank": 3 },
+    { "scopeName": "meta.function-call punctuation", "rank": 3 },
+    { "scopeName": "meta.function-call punctuation.separator.dot-access.c", "rank": 11 },
+    { "scopeName": "meta.function-call punctuation.separator.pointer-access.c", "rank": 11 },
+    { "scopeName": "meta.function-call punctuation.section", "rank": 4 },
+    { "scopeName": "meta.function-call punctuation.separator", "rank": 12 },
+    { "scopeName": "meta.function-call", "rank": 0 },
+    { "scopeName": "meta.function-call.c", "rank": 1 },
+    { "scopeName": "constant.other", "rank": 0 },
+    { "scopeName": "meta.preprocessor meta.function.c punctuation.separator", "rank": 11 },
+    { "scopeName": "support.constant", "rank": 0 },
+    { "scopeName": "meta.function.c", "rank": 0 },
+    { "scopeName": "meta.function.c punctuation", "rank": 1 },
+    { "scopeName": "meta.function.c punctuation.section", "rank": 2 },
+    { "scopeName": "meta.function.c punctuation.separator.dot-access.c", "rank": 11 },
+    { "scopeName": "meta.function.c punctuation.separator.pointer-access.c", "rank": 11 },
+    { "scopeName": "meta.function.c meta.function-call", "rank": 1 },
+    { "scopeName": "punctuation.section.parens.begin.bracket.round.c", "rank": 3 },
+    { "scopeName": "punctuation.section.parens.end.bracket.round.c", "rank": 3 },
+    { "scopeName": "meta.function.c meta.preprocessor", "rank": 1 },
+    { "scopeName": "meta.function.c punctuation.definition.directive.c", "rank": 2 },
+    { "scopeName": "meta.function.c meta.preprocessor punctuation", "rank": 2 },
+    { "scopeName": "meta.function.c meta.preprocessor punctuation.separator", "rank": 11 },
+    {
+      "scopeName": "meta.function.c meta.preprocessor punctuation.definition.directive.c",
+      "rank": 3
+    },
+    { "scopeName": "meta.function.c meta.function-call.c", "rank": 2 },
+    { "scopeName": "punctuation.section.block.begin.bracket.curly.c", "rank": 3 },
+    { "scopeName": "punctuation.section.block.end.bracket.curly.c", "rank": 3 },
+    { "scopeName": "punctuation.separator.delimiter", "rank": 11 },
+    { "scopeName": "meta.function.c meta.function.definition.parameters.c", "rank": 1 },
+    { "scopeName": "punctuation.section.parameters.begin.bracket.round.c", "rank": 3 },
+    { "scopeName": "variable.parameter", "rank": 2 },
+    { "scopeName": "punctuation.section.parameters.end.bracket.round.c", "rank": 3 },
+    { "scopeName": "variable", "rank": 0 },
+    { "scopeName": "punctuation.definition.begin.bracket", "rank": 1 },
+    { "scopeName": "punctuation.definition.end.bracket", "rank": 1 },
+    { "scopeName": "punctuation.terminator", "rank": 10 },
+    { "scopeName": "meta.block constant.other", "rank": 1 },
+    { "scopeName": "meta.block meta.preprocessor meta.function.c", "rank": 3 },
+    { "scopeName": "meta.block meta.preprocessor.include", "rank": 3 },
+    { "scopeName": "meta.block meta.function.c", "rank": 1 },
+    { "scopeName": "meta.block meta.function.c meta.function.definition.parameters.c", "rank": 2 },
+    { "scopeName": "meta.block meta.preprocessor constant.other", "rank": 3 },
+    { "scopeName": "meta.block meta.preprocessor meta.function-call.c", "rank": 4 },
+    { "scopeName": "meta.block meta.function.c meta.function-call", "rank": 2 },
+    { "scopeName": "meta.block meta.function.c meta.preprocessor", "rank": 3 },
+    { "scopeName": "meta.block meta.function invalid.illegal", "rank": 3 },
+    { "scopeName": "meta.block meta.function.c meta.function-call.c", "rank": 3 },
+    { "scopeName": "meta.block meta.function-call.c meta.preprocessor", "rank": 3 },
+    { "scopeName": "meta.function-call punctuation.definition.directive.c", "rank": 4 },
+    { "scopeName": "meta.block meta.function-call.c invalid.illegal", "rank": 3 },
+    { "scopeName": "meta.function-call.c entity.name", "rank": 3 },
+    { "scopeName": "meta.block meta.function-call.c constant.other", "rank": 3 },
+    { "scopeName": "meta.block meta.function-call.c meta.preprocessor.include", "rank": 4 },
+    { "scopeName": "meta.function-call.c support.type.sys-types", "rank": 3 },
+    { "scopeName": "meta.function-call.c support.type", "rank": 3 },
+    { "scopeName": "meta.function-call.c support.constant", "rank": 3 },
+    { "scopeName": "meta.function-call.c support.type.posix-reserved.c", "rank": 4 },
+    { "scopeName": "meta.function-call.c meta.block", "rank": 3 },
+    { "scopeName": "meta.block meta.function-call.c meta.function.c", "rank": 3 },
+    {
+      "scopeName": "meta.function-call.c constant.character.escape.line-continuation.c",
+      "rank": 3
+    },
+    { "scopeName": "meta.function-call punctuation.terminator", "rank": 11 },
+    { "scopeName": "meta.block meta.preprocessor meta.function.c meta.function-call.c", "rank": 5 },
+    { "scopeName": "meta.block meta.preprocessor meta.function.c meta.function-call", "rank": 4 },
+    {
+      "scopeName": "meta.block meta.preprocessor meta.function.c meta.function.definition.parameters.c",
+      "rank": 4
+    },
+    { "scopeName": "meta.function-call meta.preprocessor punctuation", "rank": 4 },
+    { "scopeName": "meta.function-call meta.preprocessor punctuation.separator", "rank": 12 },
+    { "scopeName": "meta.function-call entity.name.function.preprocessor", "rank": 5 },
+    { "scopeName": "meta.function-call meta.preprocessor punctuation.section", "rank": 15 },
+    {
+      "scopeName": "meta.function-call meta.preprocessor punctuation.definition.directive.c",
+      "rank": 5
+    },
+    { "scopeName": "meta.function-call constant.numeric punctuation.separator", "rank": 12 },
+    {
+      "scopeName": "meta.function-call meta.preprocessor punctuation.definition.parameters",
+      "rank": 5
+    },
+    { "scopeName": "meta.function-call.c meta.preprocessor variable.parameter", "rank": 5 },
+    { "scopeName": "meta.function-call.c meta.preprocessor meta.block", "rank": 4 },
+    { "scopeName": "meta.block meta.function-call.c meta.preprocessor meta.function.c", "rank": 4 },
+    {
+      "scopeName": "meta.function-call meta.preprocessor punctuation.separator.dot-access.c",
+      "rank": 13
+    },
+    {
+      "scopeName": "meta.function-call meta.preprocessor punctuation.separator.pointer-access.c",
+      "rank": 13
+    },
+    { "scopeName": "meta.function-call meta.function.c punctuation", "rank": 4 },
+    {
+      "scopeName": "meta.block meta.function-call.c meta.function.c meta.function.definition.parameters.c",
+      "rank": 4
+    },
+    {
+      "scopeName": "meta.function-call punctuation.section.parens.begin.bracket.round.c",
+      "rank": 5
+    },
+    { "scopeName": "meta.function-call punctuation.section.parens.end.bracket.round.c", "rank": 5 },
+    { "scopeName": "meta.function-call.c variable", "rank": 3 },
+    { "scopeName": "meta.function-call punctuation.definition.begin.bracket", "rank": 4 },
+    { "scopeName": "meta.function-call punctuation.definition.end.bracket", "rank": 4 },
+    { "scopeName": "meta.preprocessor meta.function.c entity.name", "rank": 2 },
+    { "scopeName": "meta.preprocessor meta.function.c meta.block", "rank": 2 },
+    { "scopeName": "meta.preprocessor meta.function constant.other", "rank": 2 },
+    { "scopeName": "meta.function.c meta.preprocessor.include", "rank": 2 },
+    { "scopeName": "meta.function.c support.type.sys-types", "rank": 2 },
+    { "scopeName": "meta.function.c support.type", "rank": 2 },
+    { "scopeName": "meta.preprocessor meta.function.c support.constant", "rank": 2 },
+    { "scopeName": "meta.function.c meta.block meta.preprocessor", "rank": 3 },
+    { "scopeName": "meta.function meta.block invalid.illegal", "rank": 3 },
+    { "scopeName": "meta.preprocessor meta.function.c meta.block meta.function-call", "rank": 3 },
+    { "scopeName": "meta.preprocessor meta.function.c meta.block meta.function-call.c", "rank": 4 },
+    { "scopeName": "meta.preprocessor meta.function.c meta.bracket", "rank": 2 },
+    {
+      "scopeName": "meta.preprocessor meta.function.c punctuation.definition.begin.bracket",
+      "rank": 3
+    },
+    {
+      "scopeName": "meta.preprocessor meta.function.c punctuation.definition.end.bracket",
+      "rank": 3
+    },
+    { "scopeName": "meta.preprocessor punctuation.terminator.statement.c", "rank": 11 },
+    { "scopeName": "meta.bracket invalid.illegal", "rank": 3 },
+    { "scopeName": "meta.preprocessor meta.function.c meta.function-call punctuation", "rank": 5 },
+    {
+      "scopeName": "meta.preprocessor meta.function.c meta.function-call punctuation.separator.dot-access.c",
+      "rank": 12
+    },
+    {
+      "scopeName": "meta.preprocessor meta.function.c meta.function-call punctuation.separator.pointer-access.c",
+      "rank": 12
+    },
+    {
+      "scopeName": "meta.preprocessor meta.function.c meta.function-call punctuation.section",
+      "rank": 6
+    },
+    {
+      "scopeName": "meta.preprocessor meta.function-call punctuation.section.parens.begin.bracket.round.c",
+      "rank": 7
+    },
+    {
+      "scopeName": "meta.preprocessor meta.function-call punctuation.section.parens.end.bracket.round.c",
+      "rank": 7
+    },
+    { "scopeName": "meta.function-call meta.preprocessor meta.function.c punctuation", "rank": 5 },
+    {
+      "scopeName": "meta.function-call meta.preprocessor meta.function.c punctuation.separator.dot-access.c",
+      "rank": 13
+    },
+    {
+      "scopeName": "meta.function-call meta.preprocessor meta.function.c punctuation.separator.pointer-access.c",
+      "rank": 13
+    },
+    {
+      "scopeName": "meta.function-call meta.preprocessor meta.function.c punctuation.section",
+      "rank": 15
+    },
+    {
+      "scopeName": "meta.function-call meta.preprocessor punctuation.section.parens.begin.bracket.round.c",
+      "rank": 15
+    },
+    {
+      "scopeName": "meta.function-call meta.preprocessor punctuation.section.parens.end.bracket.round.c",
+      "rank": 15
+    },
+    { "scopeName": "meta.function-call string punctuation", "rank": 5 },
+    { "scopeName": "meta.function-call meta.function.c punctuation.section", "rank": 5 },
+    { "scopeName": "meta.function-call punctuation.separator.delimiter", "rank": 12 },
+    {
+      "scopeName": "meta.function-call punctuation.section.parameters.begin.bracket.round.c",
+      "rank": 6
+    },
+    { "scopeName": "meta.function-call.c variable.parameter", "rank": 5 },
+    {
+      "scopeName": "meta.function-call punctuation.section.parameters.end.bracket.round.c",
+      "rank": 6
+    },
+    { "scopeName": "meta.function.c entity.name", "rank": 1 },
+    { "scopeName": "meta.function.c meta.block", "rank": 1 },
+    { "scopeName": "meta.function.c meta.block meta.function-call", "rank": 2 },
+    { "scopeName": "meta.function.c meta.block meta.function-call.c", "rank": 3 },
+    { "scopeName": "meta.function constant.other", "rank": 1 },
+    { "scopeName": "meta.function.c punctuation.separator", "rank": 11 },
+    {
+      "scopeName": "meta.function.c meta.preprocessor punctuation.definition.parameters",
+      "rank": 3
+    },
+    { "scopeName": "meta.function.c meta.preprocessor meta.block", "rank": 2 },
+    {
+      "scopeName": "meta.function.c meta.preprocessor punctuation.separator.dot-access.c",
+      "rank": 12
+    },
+    {
+      "scopeName": "meta.function.c meta.preprocessor punctuation.separator.pointer-access.c",
+      "rank": 12
+    },
+    { "scopeName": "meta.function.c meta.preprocessor punctuation.section", "rank": 4 },
+    { "scopeName": "meta.function.c meta.preprocessor meta.function-call", "rank": 3 },
+    { "scopeName": "meta.function.c support.constant", "rank": 1 },
+    { "scopeName": "meta.function.c meta.bracket", "rank": 1 },
+    { "scopeName": "meta.function.c punctuation.definition.begin.bracket", "rank": 2 },
+    { "scopeName": "meta.function.c punctuation.definition.end.bracket", "rank": 2 },
+    { "scopeName": "punctuation.terminator.statement.c", "rank": 11 },
+    { "scopeName": "meta.function.c meta.preprocessor entity.name", "rank": 2 },
+    { "scopeName": "meta.function meta.preprocessor constant.other", "rank": 2 },
+    { "scopeName": "meta.function.c meta.preprocessor support.constant", "rank": 2 },
+    { "scopeName": "meta.function.c meta.preprocessor meta.bracket", "rank": 2 },
+    {
+      "scopeName": "meta.function.c meta.preprocessor punctuation.definition.begin.bracket",
+      "rank": 3
+    },
+    {
+      "scopeName": "meta.function.c meta.preprocessor punctuation.definition.end.bracket",
+      "rank": 3
+    },
+    { "scopeName": "meta.function.c meta.preprocessor meta.function-call.c", "rank": 4 },
+    { "scopeName": "meta.function.c meta.block meta.preprocessor meta.function-call", "rank": 4 },
+    { "scopeName": "meta.function.c meta.function-call punctuation", "rank": 4 },
+    {
+      "scopeName": "meta.function.c meta.function-call punctuation.separator.dot-access.c",
+      "rank": 12
+    },
+    {
+      "scopeName": "meta.function.c meta.function-call punctuation.separator.pointer-access.c",
+      "rank": 12
+    },
+    { "scopeName": "meta.function.c meta.function-call punctuation.section", "rank": 5 },
+    { "scopeName": "meta.function.c meta.bracket meta.preprocessor", "rank": 2 }
+  ]
+}

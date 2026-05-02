@@ -26,15 +26,19 @@ const analyzeShikiGrammars = async () => {
     ),
   )
 
-  const grammar = grammars["html"]
+  for (const grammar of Object.values(grammars).slice(114)) {
+    try {
+      const analysis = await analyze({ grammar, themes })
 
-  const analysis = await analyze({ grammar, themes })
-
-  await fs.writeFile(
-    path.resolve(__dirname, `../analysis/${grammar.name}.json`),
-    JSON.stringify(analysis),
-    { encoding: "utf-8" },
-  )
+      await fs.writeFile(
+        path.resolve(__dirname, `../analysis/${grammar.name}.json`),
+        JSON.stringify(analysis),
+        { encoding: "utf-8" },
+      )
+    } catch (error) {
+      console.error(error)
+    }
+  }
 }
 
 analyzeShikiGrammars()

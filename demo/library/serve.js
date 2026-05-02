@@ -35,7 +35,7 @@ const initializeServer = async () => {
     } catch (error) {
       console.error(error)
       res.writeHead(500)
-      res.end(`{ "error": ${error.message} }`)
+      res.end(`{ "error": "${error.message}" }`)
     }
   })
 

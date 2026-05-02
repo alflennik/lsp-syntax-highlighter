@@ -1,0 +1,1 @@
+{"grammarName":"fortran-fixed-form","grammarScopeName":"source.fortran.fixed","scopeData":[{"scopeName":"comment","rank":0},{"scopeName":"constant.numeric","rank":0},{"scopeName":"keyword.control","rank":0},{"scopeName":"keyword","rank":0},{"scopeName":"invalid","rank":0}]}

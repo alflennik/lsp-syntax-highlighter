@@ -119,7 +119,7 @@ const initializeDemoHighlight = async () => {
       sections: [{ startOffset: 0, endOffset: sample.length, grammar: grammarName }],
     })
 
-    semanticTokens.forEach(({ lineIndex, columnIndex, content, semanticToken }) => {
+    semanticTokens.forEach(({ lineIndex, columnIndex, content, semanticToken, scopes }) => {
       const { scopeName: scopeNameRemaining, grammarScopeName } =
         semanticTokenLookups[semanticToken]
       const scopeName = `${grammarScopeName} ${scopeNameRemaining}`
@@ -137,8 +137,9 @@ const initializeDemoHighlight = async () => {
         columnIndex,
         color,
         fontStyle,
-        // scopeName, // for debugging
-        // semanticToken, // for debugging
+        scopeName, // for debugging
+        semanticToken, // for debugging
+        scopes, // for debugging
       })
     })
 
