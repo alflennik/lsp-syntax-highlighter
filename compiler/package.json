@@ -2,7 +2,7 @@
   "name": "lsp-syntax-highlighter-compiler",
   "version": "1.0.0",
   "description": "Compiler for lsp-syntax-highlighter",
-  "main": "index.js",
+  "bin": "index.js",
   "scripts": {},
   "keywords": [],
   "author": "alflennik",
