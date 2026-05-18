@@ -70,7 +70,7 @@ const requireWithLocalMode = (packageStringRaw, LOCAL_PACKAGES) => {
 
     return require(`../../${packageString}`)
   } else {
-    return require(packageString)
+    return require(packageStringRaw)
   }
 }
 
