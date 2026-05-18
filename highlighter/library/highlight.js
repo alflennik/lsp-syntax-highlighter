@@ -33,9 +33,7 @@ const initializeHighlight = async database => {
   const { getDatabaseScope } = initializeGetDatabaseScope(grammarScopesByRank)
 
   // See https://www.npmjs.com/package/vscode-textmate
-  const wasmBin = fs.readFileSync(
-    path.join(__dirname, "../node_modules/vscode-oniguruma/release/onig.wasm"),
-  ).buffer
+  const wasmBin = fs.readFileSync(require.resolve("vscode-oniguruma/release/onig.wasm")).buffer
 
   const vscodeOnigurumaLib = oniguruma.loadWASM(wasmBin).then(() => {
     return {
