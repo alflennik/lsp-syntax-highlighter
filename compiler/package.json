@@ -9,6 +9,7 @@
   "license": "MIT",
   "dependencies": {
     "lodash.omit": "^4.5.0",
+    "lsp-syntax-highlighter": "^1.0.3",
     "shiki": "^3.22.0"
   }
 }
